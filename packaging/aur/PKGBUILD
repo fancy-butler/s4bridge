@@ -3,7 +3,7 @@
 # pkgver and sha256sums; set _owner to the real GitHub account before publishing.
 _owner=fancybutler
 pkgname=s4bridge
-pkgver=0.5.0
+pkgver=0.5.1
 pkgrel=1
 pkgdesc="Use the original Traktor Kontrol S4 (MK1) with Mixxx and any MIDI software"
 arch=('any')

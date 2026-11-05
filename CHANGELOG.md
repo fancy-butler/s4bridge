@@ -2,6 +2,11 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.1
+### Fixed
+- Package build: the mixer's optional dependencies section in pyproject.toml swallowed the
+  classifiers, which made makepkg fail. The test suite now builds the real package every run.
+
 ## 0.5.0
 ### Added
 - **Standalone mixer mode**: the S4 as a four-channel mixer with no DJ software. Channels C/D play the
