@@ -159,12 +159,6 @@ No DJ software needed: the S4 becomes a four-channel hardware-style mixer.
 - **Controls:** GAIN (push to reset), HI/MID/LOW with full kill, FILTER (low-pass left, high-pass right, off in the middle), channel faders, CUE to headphones, crossfader (A and C left, B and D right, as printed), and CUE MIX.
 - **Meters:** VU meters light on the S4. A soft limiter keeps the main out from hard-clipping, and the ⚠ lamp lights when it's working.
 
-Install the extras once:
-
-```fish
-sudo pacman -S --needed python-numpy python-scipy python-jack-client pipewire-jack
-```
-
 Then open **Mixer › Start mixer**, or tick **Standalone mixer** in the tray menu. Quit Mixxx first. Each channel's source can be changed on the Mixer page.
 
 ## What's confirmed and what isn't

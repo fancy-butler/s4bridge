@@ -47,8 +47,10 @@ def unload_deck_sinks():
 def load_deck_sinks():
     unload_deck_sinks()                       # leftovers from a crash
     for name, desc in DECK_SINKS.values():
+        # the whole property list is one module argument, so the value with spaces must be
+        # quoted *inside* it, or PipeWire stops reading the description at the first space
         _pactl("load-module", "module-null-sink", f"sink_name={name}",
-               f"sink_properties=device.description=\"{desc}\"", "channel_map=front-left,front-right")
+               f"sink_properties=\"device.description='{desc}'\"", "channel_map=front-left,front-right")
 
 
 # ------------------------------------------------------------------ port discovery
@@ -57,6 +59,9 @@ def stereo_sources(client) -> dict[str, tuple[str, str]]:
     out: dict[str, list[str]] = {}
     for p in client.get_ports(is_audio=True, is_output=True):
         if p.name.startswith(client.name + ":"):
+            continue
+        # never offer the S4's own outputs as a source: the mixer would feed itself
+        if "Kontrol S4" in p.name and ("Main Out" in p.name or "Headphones Out" in p.name):
             continue
         c, _, port = p.name.partition(":")
         out.setdefault(c, []).append(port)

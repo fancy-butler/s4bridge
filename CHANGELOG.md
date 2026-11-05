@@ -2,6 +2,15 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.2
+### Fixed
+- The virtual sound outputs were named "S4" and "S4-216" instead of "S4 Deck A" / "S4 Deck B"
+  (argument quoting), so they weren't connected to channels A/B automatically.
+- The S4's own Main/Headphones outputs are no longer offered as mixer sources (feedback loop).
+### Changed
+- The mixer's components (numpy, scipy, python-jack-client, pipewire-jack) are regular dependencies,
+  so updating installs them automatically.
+
 ## 0.5.1
 ### Fixed
 - Package build: the mixer's optional dependencies section in pyproject.toml swallowed the

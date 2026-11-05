@@ -78,3 +78,47 @@ def test_meters_light_the_s4():
     lit = lambda s: sum(1 for i in range(1, 7) if dev.led_state.get(f"LED: Channel {s}: Meter {i}"))
     assert lit("A") == 4 and lit("B") == 0 and lit("C") == 6 and lit("D") == 0
     assert dev.led_state["LED: Channel C: Meter clip"] == 31
+
+
+def _pw_args(s):
+    """PipeWire's module_args_add_props (module-protocol-pulse/module.c), ported for the test."""
+    out, p = {}, 0
+    while p < len(s):
+        while p < len(s) and s[p].isspace():
+            p += 1
+        e = s.find("=", p)
+        if e < 0:
+            break
+        k, p = s[p:e], e + 1
+        f = " "
+        if p < len(s) and s[p] in "\"'":
+            f = s[p]; p += 1
+        v = ""
+        while p < len(s) and s[p] != f:
+            if s[p] == "\\":
+                p += 1
+                if p >= len(s):
+                    break
+            v += s[p]; p += 1
+        p += 1
+        out[k] = v
+    return out
+
+
+def test_virtual_sink_name_survives_pipewire_parsing(monkeypatch):
+    calls = []
+    monkeypatch.setattr(engine, "_pactl", lambda *a: calls.append(a) or "")
+    engine.load_deck_sinks()
+    loads = [c for c in calls if c[0] == "load-module"]
+    assert len(loads) == 2
+    for args, want in zip(loads, ("S4 Deck A", "S4 Deck B")):
+        line = " ".join(args[2:])                     # pactl joins argv with spaces
+        props = _pw_args(_pw_args(line)["sink_properties"])
+        assert props["device.description"] == want
+
+
+def test_s4_outputs_never_offered_as_sources():
+    c = FakeClient(["Traktor Kontrol S4 Analog Stereo Main Out:monitor_FL",
+                    "Traktor Kontrol S4 Analog Stereo Main Out:monitor_FR",
+                    "S4 Deck A:monitor_FL", "S4 Deck A:monitor_FR"])
+    assert list(engine.stereo_sources(c)) == ["S4 Deck A"]
