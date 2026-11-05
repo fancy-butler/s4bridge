@@ -2,6 +2,11 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.4.1
+### Added
+- Shipping groundwork: git history, this changelog, AppStream metainfo (software centres), app icons
+  at all sizes, README screenshots, AUR / Fedora / Debian packaging, GitHub CI and a release script.
+
 ## 0.4.0
 ### Added
 - **Pad modes** for the ▶ row (SHIFT + push MOVE): Samples, Stems (Mixxx 2.6+: mute, per-stem
