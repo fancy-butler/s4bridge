@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+export PYBUILD_NAME=s4bridge
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install
+	install -Dm644 packaging/70-s4bridge.rules debian/s4bridge/usr/lib/udev/rules.d/70-s4bridge.rules
+	install -Dm644 packaging/s4bridge.desktop debian/s4bridge/usr/share/applications/s4bridge.desktop
+	install -Dm644 packaging/s4bridge.svg debian/s4bridge/usr/share/icons/hicolor/scalable/apps/s4bridge.svg
+	install -Dm644 packaging/io.github.fancybutler.s4bridge.metainfo.xml debian/s4bridge/usr/share/metainfo/io.github.fancybutler.s4bridge.metainfo.xml
+	install -Dm644 packaging/s4bridge.service debian/s4bridge/usr/lib/systemd/user/s4bridge.service

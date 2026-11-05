@@ -1,0 +1,4 @@
+# S4 Bridge: let the logged-in user read the Traktor Kontrol S4 MK1's
+# control events (snd-usb-caiaq input device) without root, and stop it
+# being treated as a game controller.
+SUBSYSTEM=="input", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="baff", TAG+="uaccess", ENV{ID_INPUT_JOYSTICK}=""

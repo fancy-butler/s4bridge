@@ -1,0 +1,163 @@
+LED: Master: Quant
+LED: Master: Headphone
+LED: Master: Master
+LED: Master: Snap
+LED: Master: Warning
+LED: Master: Master button
+LED: Master: Snap button
+LED: Master: Rec
+LED: Master: Size
+LED: Master: Quant button
+LED: Master: Browser button
+LED: Master: Play button
+LED: Master: Undo button
+LED: Channel A: >
+LED: Channel A: <
+LED: Channel A: Meter 1
+LED: Channel A: Meter 2
+LED: Channel A: Meter 3
+LED: Channel A: Meter 4
+LED: Channel A: Meter 5
+LED: Channel A: Meter 6
+LED: Channel A: Meter clip
+LED: Channel A: Active
+LED: Channel A: Cue
+LED: Channel A: FX1
+LED: Channel A: FX2
+LED: Channel B: >
+LED: Channel B: <
+LED: Channel B: Meter 1
+LED: Channel B: Meter 2
+LED: Channel B: Meter 3
+LED: Channel B: Meter 4
+LED: Channel B: Meter 5
+LED: Channel B: Meter 6
+LED: Channel B: Meter clip
+LED: Channel B: Active
+LED: Channel B: Cue
+LED: Channel B: FX1
+LED: Channel B: FX2
+LED: Channel C: >
+LED: Channel C: <
+LED: Channel C: Meter 1
+LED: Channel C: Meter 2
+LED: Channel C: Meter 3
+LED: Channel C: Meter 4
+LED: Channel C: Meter 5
+LED: Channel C: Meter 6
+LED: Channel C: Meter clip
+LED: Channel C: Active
+LED: Channel C: Cue
+LED: Channel C: FX1
+LED: Channel C: FX2
+LED: Channel D: >
+LED: Channel D: <
+LED: Channel D: Meter 1
+LED: Channel D: Meter 2
+LED: Channel D: Meter 3
+LED: Channel D: Meter 4
+LED: Channel D: Meter 5
+LED: Channel D: Meter 6
+LED: Channel D: Meter clip
+LED: Channel D: Active
+LED: Channel D: Cue
+LED: Channel D: FX1
+LED: Channel D: FX2
+LED: Deck A: 1 (blue)
+LED: Deck A: 1 (green)
+LED: Deck A: 2 (blue)
+LED: Deck A: 2 (green)
+LED: Deck A: 3 (blue)
+LED: Deck A: 3 (green)
+LED: Deck A: 4 (blue)
+LED: Deck A: 4 (green)
+LED: Deck A: Load
+LED: Deck A: Deck C button
+LED: Deck A: In
+LED: Deck A: Out
+LED: Deck A: Shift
+LED: Deck A: Sync
+LED: Deck A: Cue
+LED: Deck A: Play
+LED: Deck A: Tempo up
+LED: Deck A: Tempo down
+LED: Deck A: Master
+LED: Deck A: Keylock
+LED: Deck A: Deck A
+LED: Deck A: Deck C
+LED: Deck A: Samples
+LED: Deck A: On Air
+LED: Deck A: Sample 1
+LED: Deck A: Sample 2
+LED: Deck A: Sample 3
+LED: Deck A: Sample 4
+LED: Deck A: Digit 1 - A
+LED: Deck A: Digit 1 - B
+LED: Deck A: Digit 1 - C
+LED: Deck A: Digit 1 - D
+LED: Deck A: Digit 1 - E
+LED: Deck A: Digit 1 - F
+LED: Deck A: Digit 1 - G
+LED: Deck A: Digit 1 - dot
+LED: Deck A: Digit 2 - A
+LED: Deck A: Digit 2 - B
+LED: Deck A: Digit 2 - C
+LED: Deck A: Digit 2 - D
+LED: Deck A: Digit 2 - E
+LED: Deck A: Digit 2 - F
+LED: Deck A: Digit 2 - G
+LED: Deck A: Digit 2 - dot
+LED: Deck B: 1 (blue)
+LED: Deck B: 1 (green)
+LED: Deck B: 2 (blue)
+LED: Deck B: 2 (green)
+LED: Deck B: 3 (blue)
+LED: Deck B: 3 (green)
+LED: Deck B: 4 (blue)
+LED: Deck B: 4 (green)
+LED: Deck B: Load
+LED: Deck B: Deck D button
+LED: Deck B: In
+LED: Deck B: Out
+LED: Deck B: Shift
+LED: Deck B: Sync
+LED: Deck B: Cue
+LED: Deck B: Play
+LED: Deck B: Tempo up
+LED: Deck B: Tempo down
+LED: Deck B: Master
+LED: Deck B: Keylock
+LED: Deck B: Deck B
+LED: Deck B: Deck D
+LED: Deck B: Samples
+LED: Deck B: On Air
+LED: Deck B: Sample 1
+LED: Deck B: Sample 2
+LED: Deck B: Sample 3
+LED: Deck B: Sample 4
+LED: Deck B: Digit 1 - A
+LED: Deck B: Digit 1 - B
+LED: Deck B: Digit 1 - C
+LED: Deck B: Digit 1 - D
+LED: Deck B: Digit 1 - E
+LED: Deck B: Digit 1 - F
+LED: Deck B: Digit 1 - G
+LED: Deck B: Digit 1 - dot
+LED: Deck B: Digit 2 - A
+LED: Deck B: Digit 2 - B
+LED: Deck B: Digit 2 - C
+LED: Deck B: Digit 2 - D
+LED: Deck B: Digit 2 - E
+LED: Deck B: Digit 2 - F
+LED: Deck B: Digit 2 - G
+LED: Deck B: Digit 2 - dot
+LED: FX1: dry/wet
+LED: FX1: 1
+LED: FX1: 2
+LED: FX1: 3
+LED: FX1: Mode
+LED: FX2: dry/wet
+LED: FX2: 1
+LED: FX2: 2
+LED: FX2: 3
+LED: FX2: Mode

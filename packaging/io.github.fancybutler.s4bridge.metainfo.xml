@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2026 Fancy Butler -->
+<component type="desktop-application">
+  <id>io.github.fancybutler.s4bridge</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>S4 Bridge</name>
+  <summary>Use the original Traktor Kontrol S4 with Mixxx and any MIDI software</summary>
+  <developer id="io.github.fancybutler">
+    <name>Fancy Butler</name>
+  </developer>
+  <description>
+    <p>
+      The original (MK1) Native Instruments Traktor Kontrol S4 only ever worked with Traktor.
+      S4 Bridge turns it into a full MIDI controller with LED feedback, so it works with Mixxx,
+      DAWs and anything else that speaks MIDI.
+    </p>
+    <ul>
+      <li>Four decks with per-deck LED memory and soft takeover</li>
+      <li>One-click Mixxx setup: mapping, controller and audio routing</li>
+      <li>Traktor-style cues, loops, FLUX, Mixer FX, samples, stems and loop rolls</li>
+      <li>Live on-screen surface, mapping editor and health check</li>
+      <li>Lives quietly in the system tray</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">s4bridge.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+  </categories>
+  <keywords>
+    <keyword>Traktor</keyword>
+    <keyword>Kontrol S4</keyword>
+    <keyword>DJ</keyword>
+    <keyword>MIDI</keyword>
+    <keyword>Mixxx</keyword>
+  </keywords>
+  <provides>
+    <modalias>usb:v17CCpBAFF*</modalias>
+  </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Live surface: every control and LED, as the bridge sees it</caption>
+      <image>https://raw.githubusercontent.com/fancybutler/s4bridge/main/docs/surface.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Mapping editor with Identify</caption>
+      <image>https://raw.githubusercontent.com/fancybutler/s4bridge/main/docs/mapping.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/fancybutler/s4bridge</url>
+  <releases>
+    <release version="0.4.0" date="2026-11-04"/>
+    <release version="0.3.3" date="2026-11-04"/>
+    <release version="0.2.0" date="2026-11-04"/>
+    <release version="0.1.0" date="2026-11-04"/>
+  </releases>
+</component>

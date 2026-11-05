@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: s4bridge
+
+Files: *
+Copyright: 2026 Fancy Butler
+License: GPL-3.0-or-later
+
+Files: s4bridge/resources/icons/*
+Copyright: Lucide Icons and Contributors
+License: ISC

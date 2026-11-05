@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "s4bridge"
+version = "0.4.0"
+description = "Use the Traktor Kontrol S4 MK1 with Mixxx and any MIDI software on Linux"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Fancy Butler" }]
+requires-python = ">=3.10"
+dependencies = ["PySide6>=6.5", "evdev>=1.6"]
+keywords = ["traktor", "kontrol", "s4", "dj", "midi", "mixxx", "controller", "linux"]
+classifiers = [
+  "Environment :: X11 Applications :: Qt",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Multimedia :: Sound/Audio :: MIDI",
+]
+
+[project.scripts]
+s4bridge = "s4bridge.app:main"
+
+[tool.setuptools.packages.find]
+include = ["s4bridge*"]
+
+[tool.setuptools.package-data]
+s4bridge = ["resources/icons/*"]

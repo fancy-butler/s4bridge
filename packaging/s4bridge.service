@@ -1,0 +1,11 @@
+[Unit]
+Description=S4 Bridge (Traktor Kontrol S4 MK1 to MIDI), headless
+After=pipewire.service
+
+[Service]
+ExecStart=/usr/bin/s4bridge --headless
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

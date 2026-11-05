@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=S4 Bridge
+GenericName=DJ controller bridge
+Comment=Use the Traktor Kontrol S4 MK1 with Mixxx and other MIDI software
+Exec=s4bridge
+Icon=s4bridge
+Terminal=false
+Categories=AudioVideo;Audio;Midi;
+Keywords=traktor;kontrol;s4;dj;midi;mixxx;controller;
+StartupWMClass=s4bridge

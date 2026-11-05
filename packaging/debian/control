@@ -1,0 +1,17 @@
+Source: s4bridge
+Section: sound
+Priority: optional
+Maintainer: Fancy Butler <fancybutler@localhost>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools, pybuild-plugin-pyproject
+Standards-Version: 4.7.0
+Homepage: https://github.com/fancybutler/s4bridge
+Rules-Requires-Root: no
+
+Package: s4bridge
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3-pyside6.qtwidgets, python3-pyside6.qtsvg,
+ python3-pyside6.qtnetwork, python3-evdev, libasound2t64 | libasound2
+Recommends: mixxx
+Description: use the original Traktor Kontrol S4 (MK1) with Mixxx and any MIDI software
+ The original Traktor Kontrol S4 only ever worked with Traktor. S4 Bridge turns it into a
+ full MIDI controller with LED feedback for Mixxx, DAWs and any MIDI software.
