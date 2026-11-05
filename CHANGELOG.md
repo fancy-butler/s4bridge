@@ -2,6 +2,17 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.5
+### Added
+- **Fix it, no terminal.** If S4 Bridge isn't allowed to read the S4's controls, a bar across the top of
+  the window says so with a **Fix it** button. It asks for your password once (polkit), installs the
+  udev rule, and the S4 connects a couple of seconds later. Health has the same button.
+- **Copy report** on the Health page: versions, distro, kernel, audio server, Mixxx and every health
+  result as a ready-to-paste GitHub issue block. Your home folder path is scrubbed out.
+- **Update notice.** Once a day S4 Bridge asks GitHub for the latest release number; if there's a newer
+  one, a small "New version" link appears in the sidebar. Nothing about you is sent. Off switch in
+  Settings › App.
+
 ## 0.5.4
 ### Changed
 - **Fits ordinary screens.** The window now goes down to 900 × 600 and opens at a size that fits your

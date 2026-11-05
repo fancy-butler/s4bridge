@@ -10,8 +10,8 @@ import time
 from collections import deque
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QColor, QFont, QKeySequence
+from PySide6.QtCore import QObject, QProcess, QSize, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QBoxLayout, QButtonGroup, QCheckBox, QComboBox,
                                QMenu, QScrollArea,
                                QDoubleSpinBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QHeaderView,
@@ -798,8 +798,13 @@ class SettingsPage(QWidget):
         self.autostart.toggled.connect(self._autostart)
         self.tray_close = QCheckBox("Keep running in the tray when closed")
         self.tray_close.toggled.connect(lambda v: self._s("close_to_tray", v))
+        self.upd = QCheckBox("Tell me when there's a new version")
+        self.upd.setToolTip("Once a day, asks GitHub for the latest release number. Nothing about you or "
+                            "your setup is sent.")
+        self.upd.toggled.connect(lambda v: self._s("check_updates", v))
         l5.addWidget(self.autostart)
         l5.addWidget(self.tray_close)
+        l5.addWidget(self.upd)
         grid.addWidget(c5, 2, 0, 1, 2)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
@@ -842,6 +847,7 @@ class SettingsPage(QWidget):
         self.takeover.setChecked(p.get("soft_takeover", True))
         self.autostart.setChecked(autostart_enabled())
         self.tray_close.setChecked(s.get("close_to_tray", True))
+        self.upd.setChecked(s.get("check_updates", True))
         self.tpr.setValue(int(s.get("jog_ticks_per_rev", 1000)))
         self.jog_scale.setValue(p.get("jog_scale", 1.0))
         self.th.setValue(p.get("touch_threshold", 3050))
@@ -1134,6 +1140,11 @@ class HealthPage(QWidget):
         head = QHBoxLayout()
         head.addWidget(page_header("Health check", "Every link from the S4 to your speakers, checked in order. "
                                    "Anything that isn't green says what's wrong and how to fix it."), 1)
+        rpt = QPushButton(theme.icon("clipboard-copy", theme.TEXT, 16), "Copy report")
+        rpt.setToolTip("Copies your versions and these results, ready to paste into a GitHub issue. "
+                       "No personal files or usernames are included.")
+        rpt.clicked.connect(self._copy_report)
+        head.addWidget(rpt, 0, Qt.AlignTop)
         again = QPushButton(theme.icon("rotate-cw", theme.TEXT, 16), "Check again")
         again.clicked.connect(self.refresh)
         head.addWidget(again, 0, Qt.AlignTop)
@@ -1202,7 +1213,25 @@ class HealthPage(QWidget):
                 row.addWidget(b, 0, Qt.AlignVCenter)
             self.list.addWidget(f)
 
+    def _copy_report(self):
+        from ..system import build_report
+        from ..updates import ISSUES_URL
+        QApplication.clipboard().setText(build_report(self.core))
+        box = QMessageBox(self)
+        box.setWindowTitle("Report copied")
+        box.setText("Your diagnostics report is on the clipboard.")
+        box.setInformativeText("Open a new issue on GitHub, describe what went wrong, and paste the report "
+                               "underneath.")
+        open_btn = box.addButton("Open GitHub issue", QMessageBox.AcceptRole)
+        box.addButton("Done", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is open_btn:
+            QDesktopServices.openUrl(QUrl(ISSUES_URL))
+
     def _fix(self, key):
+        if key == "udev":
+            self.win.fix_permissions()
+            return
         if key == "setup_mixxx":
             self.win.mapping_page._setup_mixxx()
         elif key == "test_leds":
@@ -1356,6 +1385,13 @@ class MainWindow(QMainWindow):
         bt2.setAlignment(Qt.AlignHCenter)
         bt2.setStyleSheet("font-size:11px;")
         badge.addWidget(bt2)
+        self.update_link = QLabel()
+        self.update_link.setTextFormat(Qt.RichText)
+        self.update_link.setAlignment(Qt.AlignHCenter)
+        self.update_link.setOpenExternalLinks(True)
+        self.update_link.setStyleSheet("font-size:12px; padding-top:6px;")
+        self.update_link.hide()
+        badge.addWidget(self.update_link)
         sl.addWidget(badge_w)
         sl.addSpacing(10)
 
@@ -1373,9 +1409,32 @@ class MainWindow(QMainWindow):
         self.status_card = sc
         self.status_lay = scl
         self._compact = None
+        self._fixing = False
 
+        right = QWidget()
+        rl = QVBoxLayout(right)
+        rl.setContentsMargins(0, 0, 0, 0)
+        rl.setSpacing(0)
+        self.banner = QFrame()
+        self.banner.setObjectName("banner")
+        self.banner.setStyleSheet(f"QFrame#banner {{ background:#2a1a08; border-bottom:1px solid {theme.ACCENT}; }}")
+        bl = QHBoxLayout(self.banner)
+        bl.setContentsMargins(20, 10, 16, 10)
+        bi = QLabel()
+        bi.setPixmap(theme.icon("shield-alert", theme.ACCENT, 20).pixmap(20, 20))
+        bl.addWidget(bi)
+        self.banner_text = QLabel()
+        self.banner_text.setWordWrap(True)
+        bl.addWidget(self.banner_text, 1)
+        self.banner_btn = QPushButton(theme.icon("wrench", "#1a0f03", 16), "Fix it")
+        self.banner_btn.setObjectName("primary")
+        self.banner_btn.clicked.connect(self.fix_permissions)
+        bl.addWidget(self.banner_btn)
+        self.banner.hide()
+        rl.addWidget(self.banner)
+        rl.addWidget(self.stack, 1)
         h.addWidget(sb)
-        h.addWidget(self.stack, 1)
+        h.addWidget(right, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Ready")
         self.surface_page.surface.picked.connect(self.mapping_page.select)
@@ -1391,6 +1450,7 @@ class MainWindow(QMainWindow):
         from .tray import Tray
         self.tray = Tray(self) if Tray.available() else None
         self._really_quit = False
+        self._init_updates()
         esc = QAction(self)
         esc.setShortcut(QKeySequence(Qt.Key_Escape))
         esc.triggered.connect(self.mapping_page.cancel_identify)
@@ -1502,6 +1562,92 @@ class MainWindow(QMainWindow):
         self.surface_page.rate.setText(f"{self._count} msg/s")
         self._count = 0
 
+    # ------------------------------------------------------------ permissions
+    def fix_permissions(self):
+        from ..health import UDEV_CMD
+        from ..system import can_elevate, udev_install_script
+        if not can_elevate():
+            QApplication.clipboard().setText(UDEV_CMD)
+            QMessageBox.information(self, "Needs a terminal",
+                                    "This system has no graphical password prompt (pkexec). The fix command "
+                                    "is on your clipboard: paste it into a terminal, then switch the S4 off "
+                                    "and on.")
+            return
+        self._fixing = True
+        self.banner_btn.setEnabled(False)
+        self.banner_text.setText("Waiting for your password…")
+        self.banner.show()
+        self._fix_proc = QProcess(self)
+        self._fix_proc.finished.connect(self._fix_done)
+        self._fix_proc.start("pkexec", ["/bin/sh", "-c", udev_install_script()])
+
+    def _fix_done(self, code, _status=None):
+        self._fixing = False
+        self.banner_btn.setEnabled(True)
+        if code == 0:
+            self.banner.hide()
+            self.toast("Permissions fixed. The S4 will connect in a moment.")
+        else:
+            self.banner_text.setText("That didn't go through (cancelled, or the password was wrong). Press "
+                                     "Fix it to try again.")
+            self.banner.show()
+        if self.stack.currentIndex() == self._page_index[self.health_page]:
+            self.health_page.refresh()
+
+    # ------------------------------------------------------------ update check
+    def _init_updates(self):
+        from PySide6.QtNetwork import QNetworkAccessManager
+        self._net = QNetworkAccessManager(self)
+        latest = self.core.settings.get("update_latest")
+        if latest:
+            self._show_update(latest, self.core.settings.get("update_url"))
+        self._upd_timer = QTimer(self)
+        self._upd_timer.timeout.connect(self.check_updates)
+        self._upd_timer.start(6 * 3600 * 1000)
+        QTimer.singleShot(15000, self.check_updates)  # let startup settle first
+
+    def check_updates(self, force=False):
+        from PySide6.QtNetwork import QNetworkRequest
+        from .. import updates
+        if self.core.demo and not force:
+            return
+        if not force and not updates.due(self.core.settings):
+            return
+        req = QNetworkRequest(QUrl(updates.API_URL))
+        req.setRawHeader(b"User-Agent", updates.USER_AGENT.encode())
+        req.setRawHeader(b"Accept", b"application/vnd.github+json")
+        reply = self._net.get(req)
+        reply.finished.connect(lambda r=reply: self._update_reply(r))
+
+    def _update_reply(self, reply):
+        import time
+        from PySide6.QtNetwork import QNetworkReply
+        from .. import updates
+        try:
+            if reply.error() != QNetworkReply.NoError:
+                return  # offline, rate-limited, repo not public yet: say nothing
+            self.core.settings["update_checked_at"] = time.time()
+            rel = updates.parse_release(bytes(reply.readAll()))
+            if rel and updates.is_newer(rel[0], __version__):
+                self.core.settings["update_latest"], self.core.settings["update_url"] = rel
+                self._show_update(*rel)
+            else:
+                self.core.settings.pop("update_latest", None)
+                self.update_link.hide()
+            self.core.save_settings()
+        finally:
+            reply.deleteLater()
+
+    def _show_update(self, version, url):
+        from .. import updates
+        if not updates.is_newer(version, __version__):
+            self.update_link.hide()
+            return
+        self.update_link.setText(f"<a href='{url or updates.RELEASES_URL}' style='color:{theme.ACCENT};"
+                                 f" text-decoration:none'>New version {version} ›</a>")
+        self.update_link.setToolTip("Open the release page")
+        self.update_link.show()
+
     def _on_status(self, state, detail):
         colors = {"connected": (theme.GOOD, "#0f2a1b"), "waiting": (theme.WARN, "#2a230f"),
                   "error": (theme.BAD, "#2a1010"), "starting": (theme.MUTED, "#1c1f26")}
@@ -1513,6 +1659,11 @@ class MainWindow(QMainWindow):
         self.pill.setStyleSheet(f"color:{fg}; background:{bg};")
         self.status_detail.setText(detail or "")
         self.status_card.setToolTip(f"{name[2:]}: {detail}" if detail else name[2:])
+        need = state == "error" and "permission" in (detail or "").lower()
+        if need and not self._fixing:
+            self.banner_text.setText("S4 Bridge isn't allowed to read the S4's controls yet. One-time fix: "
+                                     "it asks for your password once.")
+        self.banner.setVisible(need or self._fixing)
         self.surface_page.refresh()
         if getattr(self, "tray", None):
             self.tray.set_state(state, detail)

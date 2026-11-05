@@ -69,7 +69,8 @@ def run_checks(core) -> list[Check]:
         elif state == "error" and "permission" in detail.lower():
             checks.append(Check("Controls", FAIL,
                                 "The S4 is there but your user isn't allowed to read its controls. Install the "
-                                "udev rule, then switch the S4 off and on.", command=UDEV_CMD))
+                                "udev rule: “Fix it” asks for your password once.", fix="udev",
+                                fix_label="Fix it", command=UDEV_CMD))
         elif card:
             checks.append(Check("Controls", WARN,
                                 "The S4's audio is up but its control surface isn't connected yet. Switch it "

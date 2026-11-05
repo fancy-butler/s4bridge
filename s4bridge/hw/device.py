@@ -134,7 +134,7 @@ class CaiaqDevice(BaseDevice):
             try:
                 dev = self.find_evdev()
             except PermissionError:
-                self._status("error", "No permission for /dev/input. Install the udev rule (see README).")
+                self._status("error", "No permission to read the S4's controls. Use “Fix it” at the top of the window.")
             if dev is None:
                 if not waiting_reported:
                     self._status("waiting", "Plug in and power on the S4…")

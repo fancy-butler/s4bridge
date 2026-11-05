@@ -65,3 +65,23 @@ def test_sidebar_folds_when_narrow(win):
     win.resize(1600, 900)
     app.processEvents()
     assert win.sidebar.width() >= 200
+
+
+def test_permission_banner_shows_and_clears(win):
+    app = QApplication.instance()
+    win._on_status("error", "No permission to read the S4's controls.")
+    app.processEvents()
+    assert win.banner.isVisible()
+    win._fix_done(0)
+    app.processEvents()
+    assert not win.banner.isVisible()
+    win._on_status("connected", "")
+    assert not win.banner.isVisible()
+
+
+def test_update_link_only_for_newer(win):
+    from s4bridge import __version__
+    win._show_update("999.0.0", "https://example.invalid/r")
+    assert not win.update_link.isHidden()
+    win._show_update(__version__, None)
+    assert win.update_link.isHidden()
