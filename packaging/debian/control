@@ -1,7 +1,7 @@
 Source: s4bridge
 Section: sound
 Priority: optional
-Maintainer: Fancy Butler <fancybutler@localhost>
+Maintainer: Fancy Butler <353027392+fancy-butler@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools, pybuild-plugin-pyproject
 Standards-Version: 4.7.0
 Homepage: https://github.com/fancy-butler/s4bridge
