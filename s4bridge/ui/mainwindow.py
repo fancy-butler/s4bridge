@@ -1436,7 +1436,7 @@ class MainWindow(QMainWindow):
         h.addWidget(sb)
         h.addWidget(right, 1)
         self.setCentralWidget(root)
-        self.statusBar().showMessage("Ready")
+        self.statusBar().clearMessage()  # quiet until there is something to say (toasts fade after 4 s)
         self.sb_version = QLabel()
         self.sb_version.setTextFormat(Qt.RichText)
         self.sb_version.setOpenExternalLinks(True)

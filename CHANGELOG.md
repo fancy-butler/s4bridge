@@ -2,6 +2,11 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.7
+### Changed
+- The status bar no longer says "Ready" all the time. It stays blank until there's something to report
+  (saved, copied, fixed), and that message fades after a few seconds.
+
 ## 0.5.6
 ### Changed
 - When the window is narrow enough that the sidebar folds, the version (and any "New version" link)
