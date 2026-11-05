@@ -155,7 +155,7 @@ Global lamps (Quant, Headphone, Master, Snap, Warning) are notes `0x70`–`0x74`
 No DJ software needed: the S4 becomes a four-channel hardware-style mixer.
 
 - **Channels C and D** play the S4's rear inputs. For turntables, set the LINE/PHONO switch to PHONO.
-- **Channels A and B** are two new sound outputs, **S4 Deck A** and **S4 Deck B**. Pick one as the output in Spotify, a browser, VLC or anything else.
+- **Channels A and B** play apps on your computer. Under **Mixer › Playing now**, every app that's making sound has a dropdown: pick Deck A or Deck B. Behind the scenes these are two new sound outputs, **S4 Deck A** and **S4 Deck B**, so any audio settings tool can use them too.
 - **Controls:** GAIN (push to reset), HI/MID/LOW with full kill, FILTER (low-pass left, high-pass right, off in the middle), channel faders, CUE to headphones, crossfader (A and C left, B and D right, as printed), and CUE MIX.
 - **Meters:** VU meters light on the S4. A soft limiter keeps the main out from hard-clipping, and the ⚠ lamp lights when it's working.
 

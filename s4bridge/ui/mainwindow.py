@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import re
 import time
 from collections import deque
 from pathlib import Path
@@ -831,9 +832,7 @@ class MixerPage(QWidget):
             "Standalone mixer",
             "The S4 as a four-channel DJ mixer, no DJ software needed. Channels C and D play whatever is "
             "plugged into the S4's rear inputs (turntables: set the LINE/PHONO switch to PHONO). Channels A "
-            "and B are two new sound outputs, “S4 Deck A” and “S4 Deck B”, that any app can play into. "
-            "Faders, EQs, FILTER, GAIN (push = reset), CUE, crossfader and CUE MIX all work; the meters "
-            "light up on the S4."), 1)
+            "and B play apps on this computer: pick a deck for each one under “Playing now”."), 1)
         self.toggle = QPushButton()
         self.toggle.setMinimumWidth(170)
         self.toggle.setMinimumHeight(42)
@@ -868,6 +867,20 @@ class MixerPage(QWidget):
             grid.addWidget(c, 0, i)
         lay.addLayout(grid)
 
+        pc, self.play_lay = card("Playing now", "Pick a deck for any app that's making sound. It moves "
+                                 "instantly, and your system remembers it for next time.")
+        self.play_rows = QVBoxLayout()
+        self.play_rows.setSpacing(6)
+        self.play_lay.addLayout(self.play_rows)
+        self.play_empty = QLabel("Nothing is playing right now. Start a video or a song and it shows up here.")
+        self.play_empty.setObjectName("muted")
+        self.play_lay.addWidget(self.play_empty)
+        lay.addWidget(pc)
+        self._streams_sig = None
+        self._play_timer = QTimer(self)
+        self._play_timer.timeout.connect(self._refresh_streams)
+        self._play_timer.start(2000)
+
         mc, ml = card("Main out")
         mrow = QHBoxLayout()
         self.bars["main"] = QProgressBar()
@@ -883,9 +896,8 @@ class MixerPage(QWidget):
         self.info.setWordWrap(True)
         ml.addWidget(self.info)
         lay.addWidget(mc)
-        tip = QLabel("Tip: the mixer starts at the fader positions it last saw. Nudge each fader and knob "
-                     "once after starting so it picks up exactly where the hardware is. Quit Mixxx first: "
-                     "the two would fight over the S4's outputs and lights.")
+        tip = QLabel("Tip: nudge each fader and knob once after starting so the mixer picks up exactly where "
+                     "the hardware is. Quit Mixxx first: the two would fight over the S4's outputs and lights.")
         tip.setObjectName("muted")
         tip.setWordWrap(True)
         lay.addWidget(tip)
@@ -895,6 +907,61 @@ class MixerPage(QWidget):
     def _toggle(self):
         self.core.set_mixer(not self.mixer.running)
         self._render()
+
+    def _refresh_streams(self):
+        if not self.isVisible():
+            return
+        from ..mixer import routing
+        running = self.mixer.status.get("state") == "running"
+        streams = routing.list_streams() if running else []
+        sig = tuple((st["id"], st["app"], st["title"], st["deck"]) for st in streams)
+        if sig == self._streams_sig:
+            return
+        self._streams_sig = sig
+        while self.play_rows.count():
+            item = self.play_rows.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+        self.play_empty.setVisible(not streams)
+        if not running:
+            self.play_empty.setText("Start the mixer to send apps to it.")
+        else:
+            self.play_empty.setText("Nothing is playing right now. Start a video or a song and it shows up here.")
+        for st in streams:
+            row = QWidget()
+            h = QHBoxLayout(row)
+            h.setContentsMargins(0, 0, 0, 0)
+            name = QLabel(f"<b>{st['app']}</b>" + (f" <span style='color:{theme.MUTED}'>· {st['title'][:60]}</span>"
+                                                   if st["title"] else ""))
+            name.setTextFormat(Qt.RichText)
+            h.addWidget(name, 1)
+            combo = QComboBox()
+            combo.setMinimumWidth(200)
+            for label, deck in (("Deck A", "A"), ("Deck B", "B"), ("Not in the mixer", "")):
+                combo.addItem(label, deck)
+            combo.setCurrentIndex(combo.findData(st["deck"]))
+            combo.activated.connect(lambda _i, c=combo, sid=st["id"]: self._send(sid, c.currentData()))
+            h.addWidget(combo)
+            self.play_rows.addWidget(row)
+
+    def _send(self, sid, deck):
+        from ..mixer import routing
+        routing.send(sid, deck)
+        self._streams_sig = None
+        QTimer.singleShot(300, self._refresh_streams)
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        self._streams_sig = None
+        self._refresh_streams()
+
+    @staticmethod
+    def _pretty(name: str) -> str:
+        m = re.match(r"Traktor Kontrol S4 Analog Stereo (?:Channel |Input )?([CD])$", name)
+        if m:
+            return f"S4 rear input {m.group(1)}"
+        return name
 
     def _pick(self, strip):
         name = self.src[strip].currentData()
@@ -947,7 +1014,7 @@ class MixerPage(QWidget):
             for n in avail:
                 if n.startswith("S4 Bridge Mixer"):
                     continue
-                combo.addItem(n, n)
+                combo.addItem(self._pretty(n), n)
             idx = combo.findData(cur.get(sname, ""))
             combo.setCurrentIndex(max(0, idx))
             combo.setEnabled(state == "running")

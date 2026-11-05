@@ -2,6 +2,13 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.3
+### Added
+- **Playing now** on the Mixer page: every app making sound, each with a Deck A / Deck B / Not in the
+  mixer dropdown. No pavucontrol needed.
+### Changed
+- Mixer source names: the S4's rear inputs show as "S4 rear input C/D".
+
 ## 0.5.2
 ### Fixed
 - The virtual sound outputs were named "S4" and "S4-216" instead of "S4 Deck A" / "S4 Deck B"
