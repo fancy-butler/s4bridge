@@ -30,6 +30,13 @@ Licensed GPL-3.0-or-later. © 2026 Fancy Butler.
 
 ## Install
 
+Get the source:
+
+```fish
+git clone https://github.com/fancy-butler/s4bridge
+cd s4bridge
+```
+
 ### Check the kernel side first
 
 Plug the S4 in and switch it on, then run:
@@ -67,7 +74,7 @@ sudo install -m644 packaging/70-s4bridge.rules /etc/udev/rules.d/
 sudo udevadm control --reload && sudo udevadm trigger
 ```
 
-The udev rule gives the logged-in user access to the S4's input device and stops it showing up as a joystick. Unplug and replug once after installing it.
+The udev rule gives the logged-in user access to the S4's input device and stops it showing up as a joystick. If you skip it, S4 Bridge notices and shows a **Fix it** button that installs it for you (it asks for your password once).
 
 There are no compiled Python extensions. MIDI and LEDs go straight to `libasound` through ctypes.
 
@@ -154,6 +161,8 @@ Global lamps (Quant, Headphone, Master, Snap, Warning) are notes `0x70`–`0x74`
 
 No DJ software needed: the S4 becomes a four-channel hardware-style mixer.
 
+![Standalone mixer](docs/mixer.png)
+
 - **Channels C and D** play the S4's rear inputs. For turntables, set the LINE/PHONO switch to PHONO.
 - **Channels A and B** play apps on your computer. Under **Mixer › Playing now**, every app that's making sound has a dropdown: pick Deck A or Deck B. Behind the scenes these are two new sound outputs, **S4 Deck A** and **S4 Deck B**, so any audio settings tool can use them too.
 - **Controls:** GAIN (push to reset), HI/MID/LOW with full kill, FILTER (low-pass left, high-pass right, off in the middle), channel faders, CUE to headphones, crossfader (A and C left, B and D right, as printed), and CUE MIX.
@@ -172,13 +181,16 @@ Every control in the app is tagged with where its event code came from:
 
 To fix or fill any of these, go to **Mapping**, select the row, click **Identify**, and touch the control. That writes to `~/.config/s4bridge/hardware.json` and overrides the built-in map.
 
-Things to check on first contact with real hardware:
+Tested on a real S4 MK1 (CachyOS, Mixxx 2.5): every button, knob, fader, jog and LED; LEVEL and CUE VOL are analog-only and never reach the computer. The Mixxx mapping, browsing, loading, cues, loops, and the standalone mixer's faders, EQ, filter, crossfader and meters all work.
 
-1. **Shift, DECK C/D, Snap/Master/Quant.** If one does nothing, Identify it.
-2. **FX knob order.** The kernel comments and the tested map disagree about which way round dry/wet and knobs 1–3 are numbered. The app follows the tested map. Turn each FX knob and watch the surface.
-3. **Jog ticks per turn.** Default is 1000, measured on a real S4 MK1. To fine-tune: **Settings › Jog wheels**, reset, spin one full turn, click **Use measured**. Applies live.
-4. **Tempo fader direction.** If up is slower, tick **Invert** on the Tempo rows.
-5. **Display digits.** If loop sizes read backwards (e.g. "61" for 16), tick **Swap the two display digits**.
+Not yet confirmed on hardware:
+
+- Headphone cue in the standalone mixer.
+- The rear inputs (channels C and D) in the standalone mixer.
+- Which way the OFFSET arrows point during soft takeover.
+- Fedora and Debian/Ubuntu installs (written to their packaging rules, not run yet).
+
+If something's off on your unit, **Health › Copy report** and [open an issue](https://github.com/fancy-butler/s4bridge/issues/new).
 
 ## Credits
 

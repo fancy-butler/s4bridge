@@ -2,6 +2,15 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.8
+### Changed
+- Home is now **github.com/fancy-butler/s4bridge**. The app ID is `io.github.fancy_butler.s4bridge`
+  (app IDs can't contain hyphens, so the hyphen becomes an underscore).
+- README: clone step, laptop-size screenshots including the mixer, and an honest list of what's
+  confirmed on hardware and what isn't.
+### Fixed
+- The Deck A / Deck B buttons on the Surface page were clipped on narrower windows.
+
 ## 0.5.7
 ### Changed
 - The status bar no longer says "Ready" all the time. It stays blank until there's something to report

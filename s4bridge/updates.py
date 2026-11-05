@@ -11,7 +11,7 @@ import json
 import re
 import time
 
-REPO = "fancybutler/s4bridge"          # the one place the GitHub owner/repo lives in code
+REPO = "fancy-butler/s4bridge"          # the one place the GitHub owner/repo lives in code
 API_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES_URL = f"https://github.com/{REPO}/releases"
 ISSUES_URL = f"https://github.com/{REPO}/issues/new"

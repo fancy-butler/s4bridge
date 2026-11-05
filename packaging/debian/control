@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Fancy Butler <fancybutler@localhost>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools, pybuild-plugin-pyproject
 Standards-Version: 4.7.0
-Homepage: https://github.com/fancybutler/s4bridge
+Homepage: https://github.com/fancy-butler/s4bridge
 Rules-Requires-Root: no
 
 Package: s4bridge

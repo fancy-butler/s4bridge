@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright (C) 2026 Fancy Butler -->
 <component type="desktop-application">
-  <id>io.github.fancybutler.s4bridge</id>
+  <id>io.github.fancy_butler.s4bridge</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>S4 Bridge</name>
   <summary>Use the original Traktor Kontrol S4 with Mixxx and any MIDI software</summary>
-  <developer id="io.github.fancybutler">
+  <developer id="io.github.fancy_butler">
     <name>Fancy Butler</name>
   </developer>
   <description>
@@ -47,15 +47,16 @@
   <screenshots>
     <screenshot type="default">
       <caption>Live surface: every control and LED, as the bridge sees it</caption>
-      <image>https://raw.githubusercontent.com/fancybutler/s4bridge/main/docs/surface.png</image>
+      <image>https://raw.githubusercontent.com/fancy-butler/s4bridge/main/docs/surface.png</image>
     </screenshot>
     <screenshot>
       <caption>Mapping editor with Identify</caption>
-      <image>https://raw.githubusercontent.com/fancybutler/s4bridge/main/docs/mapping.png</image>
+      <image>https://raw.githubusercontent.com/fancy-butler/s4bridge/main/docs/mapping.png</image>
     </screenshot>
   </screenshots>
-  <url type="homepage">https://github.com/fancybutler/s4bridge</url>
+  <url type="homepage">https://github.com/fancy-butler/s4bridge</url>
   <releases>
+    <release version="0.5.8" date="2026-11-05"/>
     <release version="0.5.7" date="2026-11-05"/>
     <release version="0.5.6" date="2026-11-05"/>
     <release version="0.5.5" date="2026-11-05"/>

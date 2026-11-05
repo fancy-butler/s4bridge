@@ -106,7 +106,8 @@ class SurfacePage(QWidget):
         for s in ("L", "R"):
             b = QPushButton()
             b.setMinimumHeight(54)
-            b.setStyleSheet("font-size:18px; font-weight:800;")
+            b.setStyleSheet("font-size:17px; font-weight:800; padding:4px 6px;")
+            b.setToolTip("Flip this side's deck")
             b.clicked.connect(lambda _=False, s=s: core.translator.toggle_deck(s))
             self.deck_btn[s] = b
             row.addWidget(b)
@@ -158,7 +159,7 @@ class SurfacePage(QWidget):
     def refresh(self):
         for s in ("L", "R"):
             d = self.core.translator.active[s]
-            self.deck_btn[s].setText(f"{'◀' if s == 'L' else ''}  Deck {d}  {'▶' if s == 'R' else ''}")
+            self.deck_btn[s].setText(f"Deck {d}")
         m = self.core.midi
         if self.core.midi_error:
             self.port_lbl.setText(f"<span style='color:{theme.BAD}'>Not available</span><br>"

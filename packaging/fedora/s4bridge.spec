@@ -1,10 +1,10 @@
 # Fedora / RPM packaging. Build:  rpmbuild -ba s4bridge.spec  (with the release tarball in SOURCES)
 Name:           s4bridge
-Version:        0.5.7
+Version:        0.5.8
 Release:        1%{?dist}
 Summary:        Use the original Traktor Kontrol S4 (MK1) with Mixxx and any MIDI software
 License:        GPL-3.0-or-later
-URL:            https://github.com/fancybutler/s4bridge
+URL:            https://github.com/fancy-butler/s4bridge
 Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
 BuildArch:      noarch
 BuildRequires:  python3-devel
@@ -38,7 +38,7 @@ MIDI controller with LED feedback for Mixxx, DAWs and any MIDI software.
 install -Dm644 packaging/70-s4bridge.rules %{buildroot}%{_udevrulesdir}/70-s4bridge.rules
 install -Dm644 packaging/s4bridge.desktop %{buildroot}%{_datadir}/applications/s4bridge.desktop
 install -Dm644 packaging/s4bridge.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/s4bridge.svg
-install -Dm644 packaging/io.github.fancybutler.s4bridge.metainfo.xml -t %{buildroot}%{_metainfodir}/
+install -Dm644 packaging/io.github.fancy_butler.s4bridge.metainfo.xml -t %{buildroot}%{_metainfodir}/
 install -Dm644 packaging/s4bridge.service %{buildroot}%{_userunitdir}/s4bridge.service
 
 %files -f %{pyproject_files}
@@ -48,7 +48,7 @@ install -Dm644 packaging/s4bridge.service %{buildroot}%{_userunitdir}/s4bridge.s
 %{_udevrulesdir}/70-s4bridge.rules
 %{_datadir}/applications/s4bridge.desktop
 %{_datadir}/icons/hicolor/scalable/apps/s4bridge.svg
-%{_metainfodir}/io.github.fancybutler.s4bridge.metainfo.xml
+%{_metainfodir}/io.github.fancy_butler.s4bridge.metainfo.xml
 %{_userunitdir}/s4bridge.service
 
 %changelog

@@ -39,3 +39,17 @@ def test_every_version_string_agrees():
     }
     bad = {k: (m.group(1) if m else None) for k, m in found.items() if not m or m.group(1) != v}
     assert not bad, f"version {v} not matched in: {bad}"
+
+
+def test_github_owner_is_consistent():
+    from pathlib import Path
+    from s4bridge import updates
+    root = Path(__file__).resolve().parent.parent
+    owner = updates.REPO.split("/")[0]
+    assert owner == "fancy-butler"
+    for f in root.rglob("*"):
+        if ".git" in f.parts or not f.is_file() or f.suffix in (".png", ".svg", ".zip", ".pyc") or f == Path(__file__).resolve():
+            continue
+        text = f.read_text(errors="ignore")
+        assert "github.com/fancybutler" not in text, f
+        assert "io.github.fancybutler" not in text, f

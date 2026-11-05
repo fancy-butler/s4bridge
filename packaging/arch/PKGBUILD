@@ -1,7 +1,7 @@
 # Maintainer: Fancy Butler
 # Build from a local checkout:  cd packaging/arch && makepkg -si
 pkgname=s4bridge
-pkgver=0.5.7
+pkgver=0.5.8
 pkgrel=1
 pkgdesc="Use the Traktor Kontrol S4 MK1 with Mixxx and any MIDI software (snd-usb-caiaq bridge)"
 arch=('any')
@@ -28,7 +28,7 @@ package() {
   for n in 16 22 24 32 48 64 128 256 512; do
     install -Dm644 "packaging/icons/s4bridge-$n.png" "$pkgdir/usr/share/icons/hicolor/${n}x${n}/apps/s4bridge.png"
   done
-  install -Dm644 packaging/io.github.fancybutler.s4bridge.metainfo.xml -t "$pkgdir/usr/share/metainfo/"
+  install -Dm644 packaging/io.github.fancy_butler.s4bridge.metainfo.xml -t "$pkgdir/usr/share/metainfo/"
   install -Dm644 packaging/s4bridge.service "$pkgdir/usr/lib/systemd/user/s4bridge.service"
   install -Dm644 mappings/mixxx/* -t "$pkgdir/usr/share/s4bridge/mixxx/"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
