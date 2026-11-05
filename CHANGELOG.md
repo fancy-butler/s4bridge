@@ -2,6 +2,11 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.6
+### Changed
+- When the window is narrow enough that the sidebar folds, the version (and any "New version" link)
+  shows in the bottom-right corner of the status bar instead of disappearing.
+
 ## 0.5.5
 ### Added
 - **Fix it, no terminal.** If S4 Bridge isn't allowed to read the S4's controls, a bar across the top of

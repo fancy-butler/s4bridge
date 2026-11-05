@@ -1,7 +1,7 @@
 # Maintainer: Fancy Butler
 # Build from a local checkout:  cd packaging/arch && makepkg -si
 pkgname=s4bridge
-pkgver=0.5.5
+pkgver=0.5.6
 pkgrel=1
 pkgdesc="Use the Traktor Kontrol S4 MK1 with Mixxx and any MIDI software (snd-usb-caiaq bridge)"
 arch=('any')

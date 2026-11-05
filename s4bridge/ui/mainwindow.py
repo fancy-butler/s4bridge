@@ -1437,6 +1437,12 @@ class MainWindow(QMainWindow):
         h.addWidget(right, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Ready")
+        self.sb_version = QLabel()
+        self.sb_version.setTextFormat(Qt.RichText)
+        self.sb_version.setOpenExternalLinks(True)
+        self.sb_version.setStyleSheet(f"color:{theme.MUTED}; padding-right:10px;")
+        self.statusBar().addPermanentWidget(self.sb_version)
+        self._update_sb_version()
         self.surface_page.surface.picked.connect(self.mapping_page.select)
         self.go(0)
         self._on_status(*core.status)
@@ -1504,6 +1510,7 @@ class MainWindow(QMainWindow):
         name = getattr(self, "_pill_name", "")
         if name:
             self.pill.setText("●" if compact else name)
+        self._update_sb_version()
 
     def go(self, i):
         self.stack.setCurrentIndex(i)
@@ -1634,6 +1641,7 @@ class MainWindow(QMainWindow):
             else:
                 self.core.settings.pop("update_latest", None)
                 self.update_link.hide()
+                self._update_sb_version()
             self.core.save_settings()
         finally:
             reply.deleteLater()
@@ -1642,11 +1650,23 @@ class MainWindow(QMainWindow):
         from .. import updates
         if not updates.is_newer(version, __version__):
             self.update_link.hide()
+            self._update_sb_version()
             return
         self.update_link.setText(f"<a href='{url or updates.RELEASES_URL}' style='color:{theme.ACCENT};"
                                  f" text-decoration:none'>New version {version} ›</a>")
         self.update_link.setToolTip("Open the release page")
         self.update_link.show()
+        self._update_sb_version()
+
+    def _update_sb_version(self):
+        """Folded sidebar hides the version and update link, so they move to the status bar."""
+        if not hasattr(self, "sb_version"):
+            return
+        text = f"S4 Bridge {__version__}"
+        if not self.update_link.isHidden():
+            text += f" &nbsp;·&nbsp; {self.update_link.text()}"
+        self.sb_version.setText(text)
+        self.sb_version.setVisible(bool(self._compact))
 
     def _on_status(self, state, detail):
         colors = {"connected": (theme.GOOD, "#0f2a1b"), "waiting": (theme.WARN, "#2a230f"),

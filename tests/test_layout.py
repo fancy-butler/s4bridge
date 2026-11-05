@@ -85,3 +85,14 @@ def test_update_link_only_for_newer(win):
     assert not win.update_link.isHidden()
     win._show_update(__version__, None)
     assert win.update_link.isHidden()
+
+
+def test_version_visible_when_sidebar_folded(win):
+    from s4bridge import __version__
+    app = QApplication.instance()
+    win.resize(900, 600)
+    app.processEvents()
+    assert not win.sb_version.isHidden() and __version__ in win.sb_version.text()
+    win.resize(1600, 900)
+    app.processEvents()
+    assert win.sb_version.isHidden()
