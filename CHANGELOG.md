@@ -2,6 +2,14 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.0
+### Added
+- **Standalone mixer mode**: the S4 as a four-channel mixer with no DJ software. Channels C/D play the
+  rear inputs; channels A/B are new "S4 Deck A/B" sound outputs any app can play into. Gain, 3-band
+  EQ with kill, DJ filter, faders, crossfader, headphone cue and cue mix, VU meters on the S4's LEDs,
+  soft limiter with a warning lamp. Separate audio process (PipeWire via JACK) so the UI can't cause
+  dropouts. Mixer page, tray toggle and health check line.
+
 ## 0.4.1
 ### Added
 - Shipping groundwork: git history, this changelog, AppStream metainfo (software centres), app icons

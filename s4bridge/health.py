@@ -113,7 +113,24 @@ def run_checks(core) -> list[Check]:
                                 "Only some S4 outputs are visible: " + ", ".join(sorted(names))
                                 + ". Use the “Analog Stereo Duplex” profile in pavucontrol."))
 
-    # 7. Mixxx
+    # 7. standalone mixer
+    mx = getattr(core, "mixer", None)
+    if mx is not None and core.settings.get("mixer_enabled"):
+        st = mx.status
+        if st.get("state") == "running":
+            outs = st.get("outputs", {})
+            if not all(outs.values()):
+                checks.append(Check("Standalone mixer", WARN, "Mixing, but the S4's main out or headphones "
+                                    "weren't found in PipeWire (see S4 audio outputs above)."))
+            elif mixxx.mixxx_running():
+                checks.append(Check("Standalone mixer", WARN, "Mixxx is open too. The two will fight over the "
+                                    "S4's outputs and lights; stop the mixer or quit Mixxx."))
+            else:
+                checks.append(Check("Standalone mixer", OK, "Mixing: the S4 is working as a hardware mixer."))
+        else:
+            checks.append(Check("Standalone mixer", FAIL, st.get("error") or "Turned on but not running."))
+
+    # 8. Mixxx
     folder = mixxx.mixxx_dir()
     cfg, snd = folder / "mixxx.cfg", folder / "soundconfig.xml"
     xml_path = folder / "controllers" / "Traktor-Kontrol-S4-MK1-S4-Bridge.midi.xml"

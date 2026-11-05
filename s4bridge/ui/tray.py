@@ -97,7 +97,12 @@ class Tray(QSystemTrayIcon):
         m.addAction(theme.icon("eye", theme.TEXT, 16), "Open S4 Bridge", win.show_window)
         m.addAction(theme.icon("zap", theme.TEXT, 16), "Set up Mixxx", win.mapping_page._setup_mixxx)
         m.addAction(theme.icon("heart-pulse", theme.TEXT, 16), "Health check",
-                    lambda: (win.show_window(), win.go(3)))
+                    lambda: (win.show_window(), win.go_page(win.health_page)))
+        self.mixer_act = QAction(theme.icon("sliders-vertical", theme.TEXT, 16), "Standalone mixer", m)
+        self.mixer_act.setCheckable(True)
+        self.mixer_act.setChecked(win.core.mixer.running)
+        self.mixer_act.toggled.connect(lambda on: win.core.set_mixer(on) if on != win.core.mixer.running else None)
+        m.addAction(self.mixer_act)
         m.addAction(theme.icon("lightbulb", theme.TEXT, 16), "Test LEDs", win.core.test_leds)
         m.addSeparator()
         m.addAction(theme.icon("power", theme.TEXT, 16), "Quit S4 Bridge", win.quit_app)

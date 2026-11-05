@@ -150,6 +150,23 @@ Global lamps (Quant, Headphone, Master, Snap, Warning) are notes `0x70`–`0x74`
 
 ---
 
+## Standalone mixer
+
+No DJ software needed: the S4 becomes a four-channel hardware-style mixer.
+
+- **Channels C and D** play the S4's rear inputs. For turntables, set the LINE/PHONO switch to PHONO.
+- **Channels A and B** are two new sound outputs, **S4 Deck A** and **S4 Deck B**. Pick one as the output in Spotify, a browser, VLC or anything else.
+- **Controls:** GAIN (push to reset), HI/MID/LOW with full kill, FILTER (low-pass left, high-pass right, off in the middle), channel faders, CUE to headphones, crossfader (A and C left, B and D right, as printed), and CUE MIX.
+- **Meters:** VU meters light on the S4. A soft limiter keeps the main out from hard-clipping, and the ⚠ lamp lights when it's working.
+
+Install the extras once:
+
+```fish
+sudo pacman -S --needed python-numpy python-scipy python-jack-client pipewire-jack
+```
+
+Then open **Mixer › Start mixer**, or tick **Standalone mixer** in the tray menu. Quit Mixxx first. Each channel's source can be changed on the Mixer page.
+
 ## What's confirmed and what isn't
 
 Every control in the app is tagged with where its event code came from:

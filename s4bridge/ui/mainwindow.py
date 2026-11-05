@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import time
 from collections import deque
 from pathlib import Path
@@ -814,6 +815,151 @@ class SettingsPage(QWidget):
                               f"<span style='color:{theme.MUTED}'>ALSA card:</span> {card_id}")
 
 
+# ============================================================== Mixer page
+class MixerPage(QWidget):
+    LABELS = {"A": "Channel A", "B": "Channel B", "C": "Channel C", "D": "Channel D"}
+
+    def __init__(self, core, win):
+        super().__init__()
+        self.core, self.win = core, win
+        self.mixer = core.mixer
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 20, 24, 20)
+        lay.setSpacing(14)
+        head = QHBoxLayout()
+        head.addWidget(page_header(
+            "Standalone mixer",
+            "The S4 as a four-channel DJ mixer, no DJ software needed. Channels C and D play whatever is "
+            "plugged into the S4's rear inputs (turntables: set the LINE/PHONO switch to PHONO). Channels A "
+            "and B are two new sound outputs, “S4 Deck A” and “S4 Deck B”, that any app can play into. "
+            "Faders, EQs, FILTER, GAIN (push = reset), CUE, crossfader and CUE MIX all work; the meters "
+            "light up on the S4."), 1)
+        self.toggle = QPushButton()
+        self.toggle.setMinimumWidth(170)
+        self.toggle.setMinimumHeight(42)
+        self.toggle.clicked.connect(self._toggle)
+        head.addWidget(self.toggle, 0, Qt.AlignTop)
+        lay.addLayout(head)
+
+        self.state = QLabel()
+        self.state.setWordWrap(True)
+        self.state.setTextFormat(Qt.RichText)
+        lay.addWidget(self.state)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(14)
+        self.src = {}
+        self.bars = {}
+        for i, sname in enumerate("CABD"):        # hardware order
+            c, l = card(self.LABELS[sname])
+            combo = QComboBox()
+            combo.setMinimumWidth(180)
+            combo.activated.connect(lambda _i, s=sname: self._pick(s))
+            self.src[sname] = combo
+            l.addWidget(QLabel("Plays"))
+            l.addWidget(combo)
+            bar = QProgressBar()
+            bar.setRange(0, 100)
+            bar.setTextVisible(False)
+            bar.setFixedHeight(10)
+            self.bars[sname] = bar
+            l.addWidget(bar)
+            grid.addWidget(c, 0, i)
+        lay.addLayout(grid)
+
+        mc, ml = card("Main out")
+        mrow = QHBoxLayout()
+        self.bars["main"] = QProgressBar()
+        self.bars["main"].setRange(0, 100)
+        self.bars["main"].setTextVisible(False)
+        self.bars["main"].setFixedHeight(12)
+        mrow.addWidget(self.bars["main"], 1)
+        self.clip = QLabel()
+        mrow.addWidget(self.clip)
+        ml.addLayout(mrow)
+        self.info = QLabel()
+        self.info.setObjectName("muted")
+        self.info.setWordWrap(True)
+        ml.addWidget(self.info)
+        lay.addWidget(mc)
+        tip = QLabel("Tip: the mixer starts at the fader positions it last saw. Nudge each fader and knob "
+                     "once after starting so it picks up exactly where the hardware is. Quit Mixxx first: "
+                     "the two would fight over the S4's outputs and lights.")
+        tip.setObjectName("muted")
+        tip.setWordWrap(True)
+        lay.addWidget(tip)
+        lay.addStretch(1)
+        self._render()
+
+    def _toggle(self):
+        self.core.set_mixer(not self.mixer.running)
+        self._render()
+
+    def _pick(self, strip):
+        name = self.src[strip].currentData()
+        if name:
+            self.mixer.set_source(strip, name)
+
+    def on_event(self, ev):
+        if ev["t"] == "mixer_meters":
+            for k, bar in self.bars.items():
+                peak = ev["m"].get(k, 0.0)
+                db = 20 * math.log10(peak) if peak > 1e-6 else -60
+                bar.setValue(int(max(0, min(100, (db + 48) / 48 * 100))))
+            self.clip.setText(f"<span style='color:{theme.BAD}; font-weight:700'>LIMITING</span>"
+                              if ev.get("clip") else "")
+            if ev.get("xruns"):
+                self.info_xruns = ev["xruns"]
+        else:
+            self._render()
+
+    def _render(self):
+        st = self.mixer.status
+        state = st.get("state", "off")
+        on = state in ("running", "starting")
+        self.toggle.setText("Stop mixer" if on else "Start mixer")
+        self.toggle.setObjectName("" if on else "primary")
+        self.toggle.style().unpolish(self.toggle)
+        self.toggle.style().polish(self.toggle)
+        if state == "running":
+            outs = st.get("outputs", {})
+            miss = [n for n, ok in (("main out", outs.get("main")), ("headphones", outs.get("phones"))) if not ok]
+            self.state.setText(f"<span style='color:{theme.GOOD}; font-weight:700'>● Mixing</span> "
+                               f"<span style='color:{theme.MUTED}'>{st.get('samplerate', 0) // 1000} kHz · "
+                               f"{st.get('blocksize', 0)}-sample blocks ("
+                               f"{st.get('blocksize', 0) / max(1, st.get('samplerate', 48000)) * 1000:.1f} ms)</span>"
+                               + (f"<br><span style='color:{theme.WARN}'>Couldn't find the S4's "
+                                  f"{' and '.join(miss)} in PipeWire. Check the Health page.</span>" if miss else ""))
+        elif state == "starting":
+            self.state.setText(f"<span style='color:{theme.WARN}'>Starting…</span>")
+        elif state == "error":
+            self.state.setText(f"<span style='color:{theme.BAD}; font-weight:700'>Not running.</span> "
+                               f"{st.get('error', '')}")
+        else:
+            self.state.setText(f"<span style='color:{theme.MUTED}'>Off. Your DJ software has the S4 as usual.</span>")
+        avail = st.get("available", [])
+        cur = st.get("sources", {})
+        for sname, combo in self.src.items():
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem("— nothing —", "")
+            for n in avail:
+                if n.startswith("S4 Bridge Mixer"):
+                    continue
+                combo.addItem(n, n)
+            idx = combo.findData(cur.get(sname, ""))
+            combo.setCurrentIndex(max(0, idx))
+            combo.setEnabled(state == "running")
+            combo.blockSignals(False)
+        if state != "running":
+            for bar in self.bars.values():
+                bar.setValue(0)
+            self.clip.setText("")
+        self.info.setText("The S4's LEVEL knob sets the final volume. A soft limiter keeps the main out from "
+                          "ever hard-clipping; “LIMITING” means you're driving it. Ease off a GAIN.")
+
+
 # ============================================================== Health page
 class HealthPage(QWidget):
     COLORS = {"ok": theme.GOOD, "warn": theme.WARN, "fail": theme.BAD, "info": theme.ACCENT_2}
@@ -946,6 +1092,7 @@ class MainWindow(QMainWindow):
         self.events.status.connect(self._on_status)
         core.translator.listeners.append(self.events.event.emit)
         core.status_listeners.append(self.events.status.emit)
+        core.mixer.listeners.append(self.events.event.emit)
         self._dirty = False
         self._count = 0
 
@@ -985,8 +1132,10 @@ class MainWindow(QMainWindow):
         self.monitor_page = MonitorPage(core)
         self.settings_page = SettingsPage(core, self)
         self.health_page = HealthPage(core, self)
+        self.mixer_page = MixerPage(core, self)
         pages = [("Surface", "layout-dashboard", self.surface_page),
                  ("Mapping", "sliders-horizontal", self.mapping_page),
+                 ("Mixer", "sliders-vertical", self.mixer_page),
                  ("Monitor", "activity", self.monitor_page),
                  ("Health", "heart-pulse", self.health_page),
                  ("Settings", "settings-2", self.settings_page),
@@ -1070,6 +1219,9 @@ class MainWindow(QMainWindow):
         esc.triggered.connect(self.mapping_page.cancel_identify)
         self.addAction(esc)
 
+    def go_page(self, page):
+        self.go(self.stack.indexOf(page))
+
     def go(self, i):
         self.stack.setCurrentIndex(i)
         for j, (b, ic) in enumerate(self.nav):
@@ -1104,6 +1256,11 @@ class MainWindow(QMainWindow):
 
     def _on_event(self, ev):
         k = ev["t"]
+        if k.startswith("mixer_"):
+            self.mixer_page.on_event(ev)
+            if k == "mixer_status" and getattr(self, "tray", None):
+                self.tray.mixer_act.setChecked(self.core.mixer.running)
+            return
         self.deck_mini.ping(k)
         self.monitor_page.push(ev)
         if k in ("in", "unknown"):

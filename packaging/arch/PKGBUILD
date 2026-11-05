@@ -1,14 +1,18 @@
 # Maintainer: Fancy Butler
 # Build from a local checkout:  cd packaging/arch && makepkg -si
 pkgname=s4bridge
-pkgver=0.4.1
+pkgver=0.5.0
 pkgrel=1
 pkgdesc="Use the Traktor Kontrol S4 MK1 with Mixxx and any MIDI software (snd-usb-caiaq bridge)"
 arch=('any')
 license=('GPL-3.0-or-later')
 depends=('python' 'pyside6' 'python-evdev' 'alsa-lib')
 makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
-optdepends=('mixxx: DJ software with a bundled mapping')
+optdepends=('mixxx: DJ software with a bundled mapping'
+            'python-numpy: standalone mixer'
+            'python-scipy: standalone mixer'
+            'python-jack-client: standalone mixer'
+            'pipewire-jack: standalone mixer and Mixxx device names')
 source=()
 
 _root="$(realpath "$startdir/../..")"

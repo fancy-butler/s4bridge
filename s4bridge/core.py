@@ -61,6 +61,8 @@ class Core:
         if hasattr(self.midi, "on_message"):
             self.midi.on_message = self.translator.handle_midi
         self._anim_stop = threading.Event()
+        from .mixer.control import MixerController
+        self.mixer = MixerController(self)
 
     def _open_midi(self):
         if not alsa.seq_available():
@@ -77,6 +79,16 @@ class Core:
         self.device.start()
         self.sync_mixxx()
         threading.Thread(target=self._idle_loop, name="s4bridge-idle", daemon=True).start()
+        if self.settings.get("mixer_enabled") and not self.demo:
+            self.mixer.start()
+
+    def set_mixer(self, on: bool):
+        self.settings["mixer_enabled"] = bool(on)
+        self.save_settings()
+        if on:
+            self.mixer.start()
+        else:
+            self.mixer.stop()
 
     def set_brightness(self, pct: int):
         self.settings["led_brightness"] = int(pct)
@@ -119,6 +131,10 @@ class Core:
 
     def stop(self):
         self._anim_stop.set()
+        try:
+            self.mixer.stop()
+        except Exception:
+            pass
         try:
             if self.device.connected:
                 self.translator.all_off()
