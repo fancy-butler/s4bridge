@@ -2,6 +2,22 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.5.4
+### Changed
+- **Fits ordinary screens.** The window now goes down to 900 × 600 and opens at a size that fits your
+  display (it used to need about 1650 px of width).
+  - Under 1200 px wide the sidebar folds into an icon rail; hover an icon for its name.
+  - Surface: the side panel tucks away when space is tight, leaving the S4 drawing.
+  - Mapping: Save / Save as / Import / Export live in a **Profile** menu; MIDI channels and shift offset
+    sit behind a **Channels** button; on narrow windows Identify moves under the table.
+  - Mixer: channel cards go 2 × 2 when narrow. Settings: one column when narrow, shorter labels with
+    the detail in tooltips.
+  - Every page scrolls instead of forcing the window wider.
+- The window remembers its size and position.
+### Tests
+- A layout test fails the build if any page needs sideways scrolling at 900 × 600, 1280 × 720,
+  1366 × 768 or 1920 × 1080.
+
 ## 0.5.3
 ### Added
 - **Playing now** on the Mixer page: every app making sound, each with a Deck A / Deck B / Not in the

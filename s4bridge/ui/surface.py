@@ -46,7 +46,7 @@ class Surface(QWidget):
         super().__init__(parent)
         self.core = core
         self.setMouseTracking(True)
-        self.setMinimumSize(720, 460)
+        self.setMinimumSize(420, 270)
         self.selected: str | None = None
         self.hover: str | None = None
         self.activity: dict[str, float] = {}

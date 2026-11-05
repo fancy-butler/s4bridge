@@ -12,7 +12,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QKeySequence
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QCheckBox, QComboBox,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QBoxLayout, QButtonGroup, QCheckBox, QComboBox,
+                               QMenu, QScrollArea,
                                QDoubleSpinBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QHeaderView,
                                QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar,
                                QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QTableWidget,
@@ -144,9 +145,15 @@ class SurfacePage(QWidget):
         side.addStretch(1)
         wrap = QWidget()
         wrap.setLayout(side)
-        wrap.setFixedWidth(290)
+        wrap.setFixedWidth(270)
+        self.side_wrap = wrap
         lay.addWidget(wrap)
         self.refresh()
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        # tight on space: the drawing wins; decks are still in the sidebar, the rest in Monitor/Mapping
+        self.side_wrap.setVisible(self.width() >= 1050)
 
     def refresh(self):
         for s in ("L", "R"):
@@ -183,65 +190,88 @@ class MappingPage(QWidget):
 
         bar = QHBoxLayout()
         self.profile_box = QComboBox()
-        self.profile_box.setMinimumWidth(240)
+        self.profile_box.setMinimumWidth(170)
         self.profile_box.activated.connect(self._pick_profile)
-        bar.addWidget(QLabel("Profile"))
-        bar.addWidget(self.profile_box)
+        bar.addWidget(self.profile_box, 1)
+        menu = QMenu(self)
         for text, ic, fn in (("Save", "save", self._save), ("Save as…", "copy", self._save_as),
-                             ("Import…", "upload", self._import), ("Export…", "download", self._export)):
-            b = QPushButton(theme.icon(ic, theme.TEXT, 16), text)
-            b.clicked.connect(fn)
-            bar.addWidget(b)
-        ex = QPushButton(theme.icon("download", theme.TEXT, 16), "Export mapping only…")
-        ex.setToolTip("Write just the Mixxx mapping files (XML + script) to a folder you choose")
-        ex.clicked.connect(self._export_mixxx)
-        bar.addWidget(ex)
+                             ("Import…", "upload", self._import), ("Export…", "download", self._export),
+                             (None, None, None),
+                             ("Export Mixxx mapping files only…", "download", self._export_mixxx)):
+            if text is None:
+                menu.addSeparator()
+                continue
+            menu.addAction(theme.icon(ic, theme.TEXT, 16), text, fn)
+        pb = QToolButton()
+        pb.setText("Profile")
+        pb.setIcon(theme.icon("folder-open", theme.TEXT, 16))
+        pb.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        pb.setPopupMode(QToolButton.InstantPopup)
+        pb.setMenu(menu)
+        pb.setStyleSheet(f"QToolButton {{ background:{theme.CARD}; border:1px solid {theme.LINE}; border-radius:9px;"
+                         f" padding:7px 12px; }} QToolButton::menu-indicator {{ image:none; }}")
+        bar.addWidget(pb)
+        self.adv_btn = QToolButton()
+        self.adv_btn.setText("Channels")
+        self.adv_btn.setIcon(theme.icon("sliders-horizontal", theme.TEXT, 16))
+        self.adv_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.adv_btn.setCheckable(True)
+        self.adv_btn.setStyleSheet(pb.styleSheet())
+        self.adv_btn.setToolTip("MIDI channels, shift offset and encoder style")
+        bar.addWidget(self.adv_btn)
         mx = QPushButton(theme.icon("zap", "#1a0f03", 16), "Set up Mixxx")
         mx.setObjectName("primary")
         mx.setToolTip("One click: install the mapping, enable the S4 in Mixxx, and send Mixxx's "
                       "Main and Headphones to the S4's own outputs")
         mx.clicked.connect(self._setup_mixxx)
         bar.addWidget(mx)
-        bar.addStretch(1)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Filter controls…")
+        self.search.setPlaceholderText("Filter…")
         self.search.addAction(theme.icon("search", theme.MUTED, 16), QLineEdit.LeadingPosition)
         self.search.textChanged.connect(self._filter)
-        self.search.setFixedWidth(220)
-        bar.addWidget(self.search)
+        self.search.setMinimumWidth(120)
+        self.search.setMaximumWidth(220)
+        bar.addWidget(self.search, 1)
         lay.addLayout(bar)
 
-        glob = QHBoxLayout()
-        glob.setSpacing(18)
+        self.adv = QFrame()
+        self.adv.setObjectName("card")
+        glob = QGridLayout(self.adv)
+        glob.setContentsMargins(16, 12, 16, 12)
+        glob.setHorizontalSpacing(10)
+        glob.setVerticalSpacing(8)
         self.ch = {}
-        for d in "ABCD":
+        for i, d in enumerate("ABCD"):
             sp = QSpinBox()
             sp.setRange(1, 16)
             sp.valueChanged.connect(lambda v, d=d: self._set_chan(d, v))
             self.ch[d] = sp
-            glob.addWidget(QLabel(f"Deck {d} ch"))
-            glob.addWidget(sp)
+            glob.addWidget(QLabel(f"Deck {d} ch"), 0, i * 2)
+            glob.addWidget(sp, 0, i * 2 + 1)
         self.gch = QSpinBox()
         self.gch.setRange(1, 16)
         self.gch.valueChanged.connect(lambda v: self._set_global("global_channel", v - 1))
-        glob.addWidget(QLabel("Global ch"))
-        glob.addWidget(self.gch)
+        glob.addWidget(QLabel("Global ch"), 1, 0)
+        glob.addWidget(self.gch, 1, 1)
         self.dshift = QSpinBox()
         self.dshift.setRange(0, 127)
         self.dshift.setDisplayIntegerBase(16)
         self.dshift.setPrefix("+0x")
         self.dshift.valueChanged.connect(lambda v: self._set_global("deck_shift_offset", v))
-        glob.addWidget(QLabel("Shift offset"))
-        glob.addWidget(self.dshift)
+        glob.addWidget(QLabel("Shift offset"), 1, 2)
+        glob.addWidget(self.dshift, 1, 3)
         self.enc = QComboBox()
         self.enc.addItems(["Relative: 64 ± n", "Relative: two's complement"])
         self.enc.currentIndexChanged.connect(
             lambda i: self._set_global("relative_encoding", "offset" if i == 0 else "twos"))
-        glob.addWidget(self.enc)
-        glob.addStretch(1)
-        lay.addLayout(glob)
+        glob.addWidget(self.enc, 1, 4, 1, 4)
+        glob.setColumnStretch(8, 1)
+        self.adv.setVisible(False)
+        self.adv_btn.toggled.connect(self.adv.setVisible)
+        lay.addWidget(self.adv)
 
-        body = QHBoxLayout()
+        body = QBoxLayout(QBoxLayout.LeftToRight)
+        self.body = body
         body.setSpacing(14)
         self.table = QTableWidget(0, len(self.COLS))
         self.table.setHorizontalHeaderLabels(self.COLS)
@@ -266,6 +296,7 @@ class MappingPage(QWidget):
                         "Reported or Unknown for your unit.")
         self.id_btn = QPushButton(theme.icon("crosshair", "#1a0f03", 16), "Identify")
         self.id_btn.setObjectName("primary")
+        self.id_btn.setToolTip("Pick a row, press Identify, then touch that control on your S4.")
         self.id_btn.clicked.connect(self._identify)
         sl.addWidget(self.id_btn)
         self.id_state = QLabel("")
@@ -281,10 +312,36 @@ class MappingPage(QWidget):
         legend.setTextFormat(Qt.RichText)
         sl.addWidget(legend)
         sl.addStretch(1)
-        side.setFixedWidth(300)
+        self.id_card = side
+        self.id_legend = legend
+        self.id_help = [w for w in side.findChildren(QLabel) if w.objectName() == "muted"][:1]
         body.addWidget(side)
         lay.addLayout(body, 1)
         self.reload()
+        self._narrow = None
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        narrow = self.width() < 1100
+        if narrow == self._narrow:
+            return
+        self._narrow = narrow
+        # narrow: Identify goes under the table and drops the legend (tooltips still explain it)
+        self.body.setDirection(QBoxLayout.TopToBottom if narrow else QBoxLayout.LeftToRight)
+        self.id_legend.setVisible(not narrow)
+        for w in self.id_help:  # the instructions live in the Identify button's tooltip when space is tight
+            w.setVisible(not narrow)
+        # Area and Kind are the least useful columns; the control name matters more
+        self.table.setColumnHidden(1, narrow)
+        self.table.setColumnHidden(2, narrow)
+        self.table.setColumnWidth(7, 150 if narrow else 200)
+        self.id_card.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum if narrow else QSizePolicy.Preferred)
+        self.id_card.setMaximumHeight(self.id_card.minimumSizeHint().height() if narrow else 16777215)
+        if narrow:
+            self.id_card.setMinimumWidth(0)
+            self.id_card.setMaximumWidth(16777215)
+        else:
+            self.id_card.setFixedWidth(280)
 
     # ---------------------------------------------------------- data
     def reload(self):
@@ -549,8 +606,8 @@ class MonitorPage(QWidget):
                                   "feedback coming back from your DJ software."))
         bar = QHBoxLayout()
         self.show = {}
-        for key, label in (("in", "Hardware"), ("out", "MIDI out"), ("midi_in", "MIDI in (LEDs)"),
-                           ("unknown", "Unidentified"), ("meters", "VU meters")):
+        for key, label in (("in", "Hardware"), ("out", "MIDI out"), ("midi_in", "LED feedback"),
+                           ("unknown", "Unknown"), ("meters", "Meters")):
             cb = QCheckBox(label)
             cb.setChecked(key not in ("in", "meters"))
             self.show[key] = cb
@@ -678,11 +735,11 @@ class SettingsPage(QWidget):
 
         # LEDs
         c3, l3 = card("LEDs")
-        self.led_fb = QCheckBox("Light LEDs from DJ software feedback")
+        self.led_fb = QCheckBox("LEDs follow the DJ software")
         self.led_fb.toggled.connect(lambda v: self._p("led_feedback", v))
-        self.local_fb = QCheckBox("Light buttons while held (handy when the software sends no feedback)")
+        self.local_fb = QCheckBox("Light buttons while held")
         self.local_fb.toggled.connect(lambda v: self._p("local_press_feedback", v))
-        self.swap = QCheckBox("Swap the two display digits")
+        self.swap = QCheckBox("Swap the display digits")
         self.swap.toggled.connect(lambda v: self._p("display_swap_digits", v))
         self.boot = QCheckBox("Startup light sweep")
         self.boot.toggled.connect(lambda v: self._s("boot_animation", v))
@@ -710,8 +767,9 @@ class SettingsPage(QWidget):
         idle.addWidget(self.idle_min)
         idle.addStretch(1)
         l3.addLayout(idle)
-        self.takeover = QCheckBox("Soft takeover: after a deck flip, the tempo fader waits until it reaches "
-                                  "that deck's tempo (OFFSET ▲▼ show which way)")
+        self.takeover = QCheckBox("Soft takeover on the tempo faders")
+        self.takeover.setToolTip("After a deck flip, the tempo fader waits until it reaches that deck's tempo; "
+                                 "OFFSET ▲▼ show which way to push.")
         self.takeover.toggled.connect(lambda v: self._p("soft_takeover", v))
         l3.addWidget(self.takeover)
         tb = QPushButton(theme.icon("lightbulb", theme.TEXT, 16), "Test all LEDs")
@@ -721,7 +779,8 @@ class SettingsPage(QWidget):
 
         # device
         c4, l4 = card("Device")
-        self.grab = QCheckBox("Exclusive access (stops games and the desktop seeing the S4 as a joystick)")
+        self.grab = QCheckBox("Exclusive access to the S4")
+        self.grab.setToolTip("Stops games and the desktop treating the S4 as a joystick.")
         self.grab.toggled.connect(lambda v: self._s("grab", v))
         l4.addWidget(self.grab)
         note = QLabel("Applies on next launch. Audio (4 outs / 4 ins) is a normal ALSA/PipeWire card "
@@ -735,21 +794,40 @@ class SettingsPage(QWidget):
         grid.addWidget(c4, 1, 1)
 
         c5, l5 = card("App")
-        self.autostart = QCheckBox("Start S4 Bridge when I log in (quietly, in the tray)")
+        self.autostart = QCheckBox("Start when I log in (in the tray)")
         self.autostart.toggled.connect(self._autostart)
-        self.tray_close = QCheckBox("Closing the window keeps S4 Bridge running in the tray")
+        self.tray_close = QCheckBox("Keep running in the tray when closed")
         self.tray_close.toggled.connect(lambda v: self._s("close_to_tray", v))
         l5.addWidget(self.autostart)
         l5.addWidget(self.tray_close)
         grid.addWidget(c5, 2, 0, 1, 2)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
+        self.grid = grid
+        self.cards = [c1, c2, c3, c4, c5]
+        self._cols = 2
         outer.addLayout(grid)
         outer.addStretch(1)
         self.reload()
         t = QTimer(self)
         t.timeout.connect(self._live)
         t.start(50)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        cols = 2 if self.width() >= 1150 else 1
+        if cols == self._cols:
+            return
+        self._cols = cols
+        for c in self.cards:
+            self.grid.removeWidget(c)
+        for i, c in enumerate(self.cards):
+            if cols == 2:
+                r, col = divmod(i, 2)
+                self.grid.addWidget(c, r, col, 1, 2 if i == len(self.cards) - 1 else 1)
+            else:
+                self.grid.addWidget(c, i, 0, 1, 2)
+        self.grid.setColumnStretch(1, 1 if cols == 2 else 0)
 
     def reload(self):
         p, s = self.core.profile, self.core.settings
@@ -834,7 +912,7 @@ class MixerPage(QWidget):
             "plugged into the S4's rear inputs (turntables: set the LINE/PHONO switch to PHONO). Channels A "
             "and B play apps on this computer: pick a deck for each one under “Playing now”."), 1)
         self.toggle = QPushButton()
-        self.toggle.setMinimumWidth(170)
+        self.toggle.setMinimumWidth(140)
         self.toggle.setMinimumHeight(42)
         self.toggle.clicked.connect(self._toggle)
         head.addWidget(self.toggle, 0, Qt.AlignTop)
@@ -853,7 +931,7 @@ class MixerPage(QWidget):
         for i, sname in enumerate("CABD"):        # hardware order
             c, l = card(self.LABELS[sname])
             combo = QComboBox()
-            combo.setMinimumWidth(180)
+            combo.setMinimumWidth(130)
             combo.activated.connect(lambda _i, s=sname: self._pick(s))
             self.src[sname] = combo
             l.addWidget(QLabel("Plays"))
@@ -865,6 +943,9 @@ class MixerPage(QWidget):
             self.bars[sname] = bar
             l.addWidget(bar)
             grid.addWidget(c, 0, i)
+            self.chan_cards = getattr(self, "chan_cards", []) + [c]
+        self.chan_grid = grid
+        self._chan_cols = 4
         lay.addLayout(grid)
 
         pc, self.play_lay = card("Playing now", "Pick a deck for any app that's making sound. It moves "
@@ -904,6 +985,17 @@ class MixerPage(QWidget):
         lay.addStretch(1)
         self._render()
 
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        cols = 4 if self.width() >= 1000 else 2
+        if cols == self._chan_cols:
+            return
+        self._chan_cols = cols
+        for c in self.chan_cards:
+            self.chan_grid.removeWidget(c)
+        for i, c in enumerate(self.chan_cards):
+            self.chan_grid.addWidget(c, *divmod(i, cols))
+
     def _toggle(self):
         self.core.set_mixer(not self.mixer.running)
         self._render()
@@ -937,7 +1029,7 @@ class MixerPage(QWidget):
             name.setTextFormat(Qt.RichText)
             h.addWidget(name, 1)
             combo = QComboBox()
-            combo.setMinimumWidth(200)
+            combo.setMinimumWidth(150)
             for label, deck in (("Deck A", "A"), ("Deck B", "B"), ("Not in the mixer", "")):
                 combo.addItem(label, deck)
             combo.setCurrentIndex(combo.findData(st["deck"]))
@@ -1152,7 +1244,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.core = core
         self.setWindowTitle("S4 Bridge")
-        self.resize(1480, 900)
+        self.setMinimumSize(*self.MIN_SIZE)
+        self._fit_to_screen()
         self.setWindowIcon(theme.icon("disc-3", theme.ACCENT, 64))
         self.events = Events()
         self.events.event.connect(self._on_event)
@@ -1172,6 +1265,7 @@ class MainWindow(QMainWindow):
         sb = QWidget()
         sb.setObjectName("sidebar")
         sb.setFixedWidth(230)
+        self.sidebar = sb
         sl = QVBoxLayout(sb)
         sl.setContentsMargins(14, 18, 14, 14)
         sl.setSpacing(4)
@@ -1188,6 +1282,7 @@ class MainWindow(QMainWindow):
         b2.setObjectName("brandSub")
         bt.addWidget(b1)
         bt.addWidget(b2)
+        self.brand_labels = (b1, b2)
         brand.addLayout(bt)
         brand.addStretch(1)
         sl.addLayout(brand)
@@ -1210,8 +1305,15 @@ class MainWindow(QMainWindow):
         grp = QButtonGroup(self)
         grp.setExclusive(True)
         self.nav = []
+        self._page_index = {}
         for i, (name, ic, page) in enumerate(pages):
-            self.stack.addWidget(page)
+            sa = QScrollArea()
+            sa.setWidget(page)
+            sa.setWidgetResizable(True)
+            sa.setFrameShape(QFrame.NoFrame)
+            sa.setStyleSheet("QScrollArea { background: transparent; } QScrollArea > QWidget > QWidget { background: transparent; }")
+            self.stack.addWidget(sa)
+            self._page_index[page] = i
             b = QToolButton()
             b.setObjectName("nav")
             b.setText(f"  {name}")
@@ -1221,6 +1323,8 @@ class MainWindow(QMainWindow):
             b.setCheckable(True)
             b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             b.clicked.connect(lambda _=False, i=i, ic=ic: self.go(i))
+            b.setToolTip(name)
+            b.setProperty("label", f"  {name}")
             grp.addButton(b)
             self.nav.append((b, ic))
             sl.addWidget(b)
@@ -1230,8 +1334,11 @@ class MainWindow(QMainWindow):
         self.deck_mini = DeckMini(core)
         sl.addWidget(self.deck_mini)
         sl.addSpacing(10)
-        badge = QVBoxLayout()
+        badge_w = QWidget()
+        badge = QVBoxLayout(badge_w)
+        badge.setContentsMargins(0, 0, 0, 0)
         badge.setSpacing(2)
+        self.badge = badge_w
         top = QHBoxLayout()
         top.setSpacing(8)
         top.addStretch(1)
@@ -1249,7 +1356,7 @@ class MainWindow(QMainWindow):
         bt2.setAlignment(Qt.AlignHCenter)
         bt2.setStyleSheet("font-size:11px;")
         badge.addWidget(bt2)
-        sl.addLayout(badge)
+        sl.addWidget(badge_w)
         sl.addSpacing(10)
 
         sc, scl = card()
@@ -1263,6 +1370,9 @@ class MainWindow(QMainWindow):
         self.status_detail.setStyleSheet("font-size:11px;")
         scl.addWidget(self.status_detail)
         sl.addWidget(sc)
+        self.status_card = sc
+        self.status_lay = scl
+        self._compact = None
 
         h.addWidget(sb)
         h.addWidget(self.stack, 1)
@@ -1286,8 +1396,54 @@ class MainWindow(QMainWindow):
         esc.triggered.connect(self.mapping_page.cancel_identify)
         self.addAction(esc)
 
+    MIN_SIZE = (900, 600)
+
     def go_page(self, page):
-        self.go(self.stack.indexOf(page))
+        self.go(self._page_index[page])
+
+    # ------------------------------------------------------------ sizing
+    def _fit_to_screen(self):
+        from PySide6.QtCore import QByteArray
+        geo = self.core.settings.get("window_geometry")
+        if geo:
+            try:
+                if self.restoreGeometry(QByteArray.fromBase64(geo.encode())):
+                    return
+            except Exception:
+                pass
+        scr = QApplication.primaryScreen()
+        avail = scr.availableGeometry() if scr else None
+        w, h = 1480, 940
+        if avail:
+            w, h = min(w, int(avail.width() * 0.9)), min(h, int(avail.height() * 0.9))
+        self.resize(max(900, w), max(600, h))
+
+    def _save_geometry(self):
+        self.core.settings["window_geometry"] = bytes(self.saveGeometry().toBase64()).decode()
+        self.core.save_settings()
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        compact = self.width() < 1200
+        if compact == self._compact:
+            return
+        self._compact = compact
+        # narrow window: the sidebar folds into an icon rail
+        self.sidebar.setFixedWidth(72 if compact else 230)
+        for lbl in self.brand_labels:
+            lbl.setVisible(not compact)
+        for b, _ic in self.nav:
+            b.setText("" if compact else b.property("label"))
+            b.setToolButtonStyle(Qt.ToolButtonIconOnly if compact else Qt.ToolButtonTextBesideIcon)
+        self.deck_mini.setVisible(not compact)
+        self.badge.setVisible(not compact)
+        self.status_detail.setVisible(not compact)
+        m = 4 if compact else 12
+        self.status_lay.setContentsMargins(m, m, m, m)
+        self.status_lay.setAlignment(self.pill, Qt.AlignCenter if compact else Qt.AlignLeft)
+        name = getattr(self, "_pill_name", "")
+        if name:
+            self.pill.setText("●" if compact else name)
 
     def go(self, i):
         self.stack.setCurrentIndex(i)
@@ -1352,9 +1508,11 @@ class MainWindow(QMainWindow):
         fg, bg = colors.get(state, colors["starting"])
         name = {"connected": "● Demo" if self.core.demo else "● Connected", "waiting": "● Waiting",
                 "error": "● Error", "starting": "● Starting"}[state]
-        self.pill.setText(name)
+        self._pill_name = name
+        self.pill.setText("●" if self._compact else name)
         self.pill.setStyleSheet(f"color:{fg}; background:{bg};")
         self.status_detail.setText(detail or "")
+        self.status_card.setToolTip(f"{name[2:]}: {detail}" if detail else name[2:])
         self.surface_page.refresh()
         if getattr(self, "tray", None):
             self.tray.set_state(state, detail)
@@ -1369,7 +1527,12 @@ class MainWindow(QMainWindow):
         self._really_quit = True
         self.close()
 
+    def hideEvent(self, e):
+        self._save_geometry()
+        super().hideEvent(e)
+
     def closeEvent(self, e):
+        self._save_geometry()
         if self.tray and not self._really_quit and self.core.settings.get("close_to_tray", True):
             e.ignore()
             self.hide()
