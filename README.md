@@ -59,7 +59,7 @@ sudo udevadm control --reload; and sudo udevadm trigger
 ### Fedora
 
 ```fish
-sudo dnf install python3-pyside6 python3-evdev alsa-lib
+sudo dnf install python3-pyside6 python3-evdev python3-pyusb alsa-lib
 pipx install --system-site-packages .
 sudo install -m644 packaging/70-s4bridge.rules /etc/udev/rules.d/
 sudo udevadm control --reload; and sudo udevadm trigger
@@ -68,7 +68,7 @@ sudo udevadm control --reload; and sudo udevadm trigger
 ### Debian / Ubuntu (24.04+)
 
 ```bash
-sudo apt install python3-pyside6.qtwidgets python3-pyside6.qtsvg python3-evdev pipx
+sudo apt install python3-pyside6.qtwidgets python3-pyside6.qtsvg python3-evdev python3-usb pipx
 pipx install --system-site-packages .
 sudo install -m644 packaging/70-s4bridge.rules /etc/udev/rules.d/
 sudo udevadm control --reload && sudo udevadm trigger

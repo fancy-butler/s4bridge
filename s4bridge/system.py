@@ -16,13 +16,22 @@ UDEV_RULE = (
     "# being treated as a game controller.\n"
     'SUBSYSTEM=="input", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="baff", TAG+="uaccess", '
     'ENV{ID_INPUT_JOYSTICK}=""\n'
+    "# Built-in USB driver (Settings › S4 connection): the raw USB device node.\n"
+    'SUBSYSTEM=="usb", ATTR{idVendor}=="17cc", ATTR{idProduct}=="baff", TAG+="uaccess"\n'
 )
 RULE_NAME = "70-s4bridge.rules"
 RULE_DIRS = (Path("/etc/udev/rules.d"), Path("/usr/lib/udev/rules.d"), Path("/lib/udev/rules.d"))
 
 
 def udev_rule_installed() -> bool:
-    return any((d / RULE_NAME).exists() for d in RULE_DIRS)
+    """Installed *and current*: rules from before 0.6 lack the line the built-in USB driver needs."""
+    for d in RULE_DIRS:
+        try:
+            if 'SUBSYSTEM=="usb"' in (d / RULE_NAME).read_text():
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def udev_install_script() -> str:
@@ -31,7 +40,8 @@ def udev_install_script() -> str:
             f"cat > /etc/udev/rules.d/{RULE_NAME} <<'S4RULE'\n{UDEV_RULE}S4RULE\n"
             f"chmod 644 /etc/udev/rules.d/{RULE_NAME}\n"
             "udevadm control --reload\n"
-            "udevadm trigger --subsystem-match=input --action=change\n")
+            "udevadm trigger --subsystem-match=input --action=change\n"
+            "udevadm trigger --subsystem-match=usb --attr-match=idVendor=17cc --action=change\n")
 
 
 def can_elevate() -> bool:

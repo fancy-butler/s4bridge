@@ -2,6 +2,20 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.0
+### Added
+- **Built-in USB driver (beta).** S4 Bridge can now talk to the S4 directly over USB instead of going
+  through the Linux kernel driver. This is the groundwork for the Mac and Windows versions: no NI driver
+  and no MIDI-mode workaround, with full-resolution jogs and every LED.
+  - On Linux, pick it under **Settings › Device › Connection**. Switching is live; switching back
+    hands the S4 back to the kernel.
+  - Controls and LEDs only for now: the S4's own sound card isn't available while this driver has it.
+  - Its decoder matches the kernel driver exactly (checked against the kernel's own code on 15,000
+    random reports).
+### Changed
+- The udev rule also covers the S4's raw USB device. Older installs get the **Fix it** prompt once.
+- New dependency: pyusb (python-pyusb / python3-pyusb / python3-usb).
+
 ## 0.5.8
 ### Changed
 - Home is now **github.com/fancy-butler/s4bridge**. The app ID is `io.github.fancy_butler.s4bridge`

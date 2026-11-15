@@ -2,3 +2,5 @@
 # control events (snd-usb-caiaq input device) without root, and stop it
 # being treated as a game controller.
 SUBSYSTEM=="input", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="baff", TAG+="uaccess", ENV{ID_INPUT_JOYSTICK}=""
+# Built-in USB driver (Settings › S4 connection): the raw USB device node.
+SUBSYSTEM=="usb", ATTR{idVendor}=="17cc", ATTR{idProduct}=="baff", TAG+="uaccess"

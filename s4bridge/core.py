@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import sys
 import threading
 import time
 from pathlib import Path
@@ -52,7 +53,7 @@ class Core:
 
         self.midi_error = ""
         self.midi = self._open_midi()
-        self.device: BaseDevice = SimDevice() if demo else CaiaqDevice(grab=self.settings.get("grab", True))
+        self.device: BaseDevice = SimDevice() if demo else self._make_device()
         self.translator = Translator(self.hw, self.profile, self.device, self.midi.send)
         self.device.brightness = float(self.settings.get("led_brightness", 100)) / 100
         self.set_ticks_per_rev(int(self.settings.get("jog_ticks_per_rev", 1000)))   # measured on a real S4 MK1
@@ -75,6 +76,38 @@ class Core:
             return NullMidi(str(e))
 
     # ------------------------------------------------------------ lifecycle
+    # ------------------------------------------------------------ which driver talks to the S4
+    def driver_choice(self) -> str:
+        """'kernel' (Linux snd-usb-caiaq) or 'usb' (built-in libusb driver). Auto: kernel on Linux."""
+        want = self.settings.get("driver", "auto")
+        if want in ("kernel", "usb"):
+            return want if (want == "usb" or sys.platform.startswith("linux")) else "usb"
+        return "kernel" if sys.platform.startswith("linux") else "usb"
+
+    def _make_device(self) -> BaseDevice:
+        if self.driver_choice() == "usb":
+            from .hw.usb_s4 import UsbDevice
+            return UsbDevice()
+        return CaiaqDevice(grab=self.settings.get("grab", True))
+
+    def set_driver(self, name: str):
+        """Switch drivers live: the old one lets go of the S4 (handing it back to the kernel if it took it)."""
+        self.settings["driver"] = name
+        self.save_settings()
+        if self.demo:
+            return
+        old = self.device
+        new = self._make_device()
+        if type(new) is type(old):
+            return
+        old.stop()
+        new.on_event, new.on_status = old.on_event, old.on_status
+        new.brightness = old.brightness
+        new.led_state = dict(old.led_state)
+        self.device = new
+        self.translator.device = new
+        new.start()
+
     def start(self):
         self.device.start()
         self.sync_mixxx()

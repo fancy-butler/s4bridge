@@ -8,6 +8,7 @@ S4 -> kernel driver -> input device permissions -> S4 Bridge -> MIDI port
 from __future__ import annotations
 
 import re
+import sys
 import subprocess
 from dataclasses import dataclass, field
 
@@ -50,10 +51,19 @@ def run_checks(core) -> list[Check]:
     checks: list[Check] = []
     demo = getattr(core, "demo", False)
 
+    usb_mode = not demo and core.driver_choice() == "usb"
+
     # 1. kernel driver / card
-    card = alsa.find_card()
+    card = alsa.find_card() if sys.platform.startswith("linux") else None
     if demo:
         checks.append(Check("S4 detected", INFO, "Demo mode: hardware checks skipped."))
+    elif usb_mode:
+        if core.device.connected:
+            checks.append(Check("S4 detected", OK, "S4 Bridge's built-in USB driver has the S4."))
+        else:
+            checks.append(Check("S4 detected", FAIL,
+                                "The built-in USB driver can't see the S4. Check the USB cable, and that the S4 "
+                                "is switched on (button next to the USB socket on the back)."))
     elif card:
         checks.append(Check("S4 detected", OK, f"Kernel driver snd-usb-caiaq has the S4 as ALSA card “{card}”."))
     else:
@@ -71,7 +81,7 @@ def run_checks(core) -> list[Check]:
                                 "The S4 is there but your user isn't allowed to read its controls. Install the "
                                 "udev rule: “Fix it” asks for your password once.", fix="udev",
                                 fix_label="Fix it", command=UDEV_CMD))
-        elif card:
+        elif card and not usb_mode:
             checks.append(Check("Controls", WARN,
                                 "The S4's audio is up but its control surface isn't connected yet. Switch it "
                                 "off and on; if that doesn't help, the kernel may lack CONFIG_SND_USB_CAIAQ_INPUT."))
@@ -87,15 +97,21 @@ def run_checks(core) -> list[Check]:
 
     # 5. LEDs
     if not demo:
-        if getattr(core.device, "_leds", None):
+        if usb_mode and core.device.connected:
+            checks.append(Check("LEDs", OK, "LED control is working.", fix="test_leds", fix_label="Test LEDs"))
+        elif getattr(core.device, "_leds", None):
             checks.append(Check("LEDs", OK, "LED control is working.", fix="test_leds", fix_label="Test LEDs"))
         elif core.device.connected:
             checks.append(Check("LEDs", WARN, "Controls work but the LEDs can't be driven (ALSA control access)."))
 
     # 6. S4 audio outputs in PipeWire
-    blocks = [b for b in _sinks_blocks() if "Kontrol S4" in b["desc"]]
+    blocks = [b for b in _sinks_blocks() if "Kontrol S4" in b["desc"]] if not usb_mode else []
     if demo:
         pass
+    elif usb_mode:
+        checks.append(Check("S4 audio outputs", INFO,
+                            "The built-in USB driver handles controls and LEDs. The S4's own sound card isn't "
+                            "available in this mode yet: play through another output."))
     elif not blocks:
         checks.append(Check("S4 audio outputs", WARN if card else FAIL,
                             "PipeWire isn't showing the S4's outputs. In pavucontrol › Configuration, set the "

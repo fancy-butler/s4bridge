@@ -10,7 +10,7 @@ Rules-Requires-Root: no
 Package: s4bridge
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}, python3-pyside6.qtwidgets, python3-pyside6.qtsvg,
- python3-pyside6.qtnetwork, python3-evdev, libasound2t64 | libasound2,
+ python3-pyside6.qtnetwork, python3-evdev, python3-usb, libasound2t64 | libasound2,
  python3-numpy, python3-scipy, python3-jack-client, pipewire-jack
 Recommends: mixxx
 Description: use the original Traktor Kontrol S4 (MK1) with Mixxx and any MIDI software

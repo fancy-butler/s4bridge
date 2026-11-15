@@ -2,6 +2,8 @@
 # Copyright (C) 2026 Fancy Butler
 from __future__ import annotations
 
+import sys
+
 import copy
 import json
 import math
@@ -780,6 +782,21 @@ class SettingsPage(QWidget):
 
         # device
         c4, l4 = card("Device")
+        drow = QHBoxLayout()
+        drow.addWidget(QLabel("Connection"))
+        self.driver = QComboBox()
+        self.driver.addItem("Linux kernel driver", "kernel")
+        self.driver.addItem("Built-in USB driver (beta)", "usb")
+        self.driver.setToolTip("Kernel driver: controls, LEDs and the S4's sound card (Linux only).\n"
+                               "Built-in USB driver: controls and LEDs on any system, but no S4 sound card yet. "
+                               "This is what Mac and Windows use.")
+        self.driver.activated.connect(lambda _i: self._set_driver(self.driver.currentData()))
+        drow.addWidget(self.driver, 1)
+        self.driver_row = QWidget()
+        self.driver_row.setLayout(drow)
+        drow.setContentsMargins(0, 0, 0, 0)
+        self.driver_row.setVisible(sys.platform.startswith("linux"))   # elsewhere there's only one choice
+        l4.addWidget(self.driver_row)
         self.grab = QCheckBox("Exclusive access to the S4")
         self.grab.setToolTip("Stops games and the desktop treating the S4 as a joystick.")
         self.grab.toggled.connect(lambda v: self._s("grab", v))
@@ -835,6 +852,18 @@ class SettingsPage(QWidget):
                 self.grid.addWidget(c, i, 0, 1, 2)
         self.grid.setColumnStretch(1, 1 if cols == 2 else 0)
 
+    def _set_driver(self, name):
+        if name == "usb" and not self.core.demo:
+            from ..hw.usb_s4 import available
+            if not available():
+                QMessageBox.warning(self, "Needs pyusb", "The built-in USB driver needs the pyusb package "
+                                    "(python-pyusb on Arch, python3-pyusb on Fedora, python3-usb on Debian).")
+                self.driver.setCurrentIndex(self.driver.findData("kernel"))
+                return
+        self.core.set_driver(name)
+        self.grab.setEnabled(name == "kernel")
+        self.win.toast("Using the built-in USB driver" if name == "usb" else "Using the Linux kernel driver")
+
     def reload(self):
         p, s = self.core.profile, self.core.settings
         from .tray import autostart_enabled
@@ -857,6 +886,9 @@ class SettingsPage(QWidget):
         self.swap.setChecked(p.get("display_swap_digits", False))
         self.boot.setChecked(s.get("boot_animation", True))
         self.grab.setChecked(s.get("grab", True))
+        cur = self.core.driver_choice()
+        self.driver.setCurrentIndex(max(0, self.driver.findData(cur)))
+        self.grab.setEnabled(cur == "kernel")
         for w in (self.jog_scale, self.th, self.led_fb, self.local_fb, self.swap, self.boot, self.grab, self.tpr,
                   self.autostart, self.tray_close, self.bright, self.idle, self.idle_min, self.takeover):
             w.blockSignals(False)
