@@ -2,6 +2,13 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.2
+### Fixed
+- Built-in USB driver: after switching back and forth with the kernel driver, the S4 could connect but
+  never send anything, so nothing responded until it was power-cycled. The driver now notices total
+  silence right after connecting, re-sends the start command, and if that doesn't wake it, resets the
+  USB connection and reconnects on its own. An idle S4 that has already reported is never touched.
+
 ## 0.6.1
 ### Fixed
 - Knobs no longer "move" by themselves. The S4's knob readings wobble by a count or two when LEDs

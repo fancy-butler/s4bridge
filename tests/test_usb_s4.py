@@ -195,3 +195,80 @@ def test_extras_expose_bytes_the_kernel_ignores_without_changing_known_codes():
     b0 = bytearray(block(0))
     b0[2] = 0x10                                            # a bit in a button byte the kernel skips
     assert any(c >= EXTRA_BASE and v == 0x10 for c, v in extra.feed(bytes(b0)))
+
+
+class QuietS4(FakeS4):
+    """Accepts the connection, then says nothing, until it's nudged `wake_on` times."""
+
+    def __init__(self, wake_on=None):
+        super().__init__(kernel_attached=False)
+        self.wake_on, self.nudges = wake_on, 0
+
+    def write(self, ep, data, timeout=None):
+        if ep == usb_s4.EP1_OUT and bytes(data)[:1] == b"\x0b":
+            self.nudges += 1
+        return super().write(ep, data, timeout)
+
+    def read(self, ep, n, timeout=None):
+        import usb.core
+        if ep == usb_s4.EP4_IN:
+            if self.wake_on is not None and self.nudges >= self.wake_on:
+                return block(0)
+            raise usb.core.USBTimeoutError("quiet")
+        return super().read(ep, n, timeout)
+
+
+def _run_pump(dev, d, secs):
+    import threading
+    import time
+    out = {}
+    d._stop = threading.Event()
+
+    def go():
+        try:
+            d._pump(dev)
+            out["r"] = "stopped"
+        except UsbDevice.Silent:
+            out["r"] = "silent"
+    t = threading.Thread(target=go)
+    t.start()
+    time.sleep(secs)
+    d._stop.set()
+    t.join(2)
+    return out.get("r")
+
+
+def test_stuck_s4_gets_nudged_and_wakes(monkeypatch):
+    pytest.importorskip("usb")
+    monkeypatch.setattr(UsbDevice, "WAKE_AFTER", 0.05)
+    d, s4 = UsbDevice(), QuietS4(wake_on=1)     # nudge #1 = first re-send of AUTO_MSG
+    events = []
+    d.on_event = lambda c, v: events.append(c)
+    assert _run_pump(s4, d, 0.5) == "stopped"
+    assert s4.nudges == 1 and events
+
+
+def test_s4_that_never_answers_triggers_reconnect(monkeypatch):
+    pytest.importorskip("usb")
+    monkeypatch.setattr(UsbDevice, "WAKE_AFTER", 0.05)
+    assert _run_pump(QuietS4(), UsbDevice(), 0.6) == "silent"
+
+
+def test_idle_s4_after_first_report_is_left_alone(monkeypatch):
+    pytest.importorskip("usb")
+    import usb.core
+    monkeypatch.setattr(UsbDevice, "WAKE_AFTER", 0.05)
+
+    class OnceThenIdle(FakeS4):
+        sent = False
+
+        def read(self, ep, n, timeout=None):
+            if ep == usb_s4.EP4_IN:
+                if not self.sent:
+                    self.sent = True
+                    return block(0)
+                raise usb.core.USBTimeoutError("idle")
+            return super().read(ep, n, timeout)
+    s4 = OnceThenIdle(kernel_attached=False)
+    assert _run_pump(s4, UsbDevice(), 0.5) == "stopped"
+    assert not any(e[0] == "w" and e[2][:1] == b"\x0b" for e in s4.log)

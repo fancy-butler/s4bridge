@@ -1,6 +1,6 @@
 # Fedora / RPM packaging. Build:  rpmbuild -ba s4bridge.spec  (with the release tarball in SOURCES)
 Name:           s4bridge
-Version:        0.6.1
+Version:        0.6.2
 Release:        1%{?dist}
 Summary:        Use the original Traktor Kontrol S4 (MK1) with Mixxx and any MIDI software
 License:        GPL-3.0-or-later

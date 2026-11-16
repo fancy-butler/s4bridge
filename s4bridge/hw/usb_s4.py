@@ -424,24 +424,60 @@ class UsbDevice(BaseDevice):
             self._status("connected", f"Built-in USB driver{fw}")
             for n, v in list(self.led_state.items()):     # LEDs match after a reconnect
                 self._write_led(n, self._hw_level(v))
+            silent = False
             try:
                 self._pump(dev)
             except usb.core.USBError:
                 pass   # unplugged
+            except self.Silent:
+                silent = True
             finally:
+                if silent:
+                    try:
+                        dev.reset()   # clean slate; we reconnect on the next pass
+                    except Exception:  # noqa: BLE001
+                        pass
                 self._close(dev)
+            if silent and not self._stop.is_set():
+                self._status("waiting", "The S4 wasn't answering. Reconnecting…")
+                self._stop.wait(1.0)
+                continue
             if not self._stop.is_set():
                 self._status("waiting", "S4 disconnected. Waiting for it to come back…")
                 waiting = True
 
+    WAKE_AFTER = 3.0   # seconds of total silence right after connecting before we nudge the S4
+
+    class Silent(Exception):
+        """Connected, but the S4 never started reporting (left half-configured by another driver)."""
+
     def _pump(self, dev):
+        import time
+
         import usb.core
         parser = S4Parser(extras=True)
+        heard = False
+        nudged = False
+        t0 = time.monotonic()
         while not self._stop.is_set():
             try:
                 buf = bytes(dev.read(EP4_IN, 512, timeout=250))
             except usb.core.USBTimeoutError:
+                # A healthy S4 sends its whole state the moment reporting starts. Total silence after
+                # connecting means it's stuck; once it has spoken, quiet just means nobody's touching it.
+                if not heard and time.monotonic() - t0 > self.WAKE_AFTER:
+                    if nudged:
+                        raise self.Silent()
+                    nudged = True
+                    t0 = time.monotonic()
+                    self._status("connected", "Waking the S4…")
+                    dev.write(EP1_OUT, bytes((CMD_AUTO_MSG, 1, 10, 5)), timeout=500)
                 continue
+            if not heard:
+                heard = True
+                if nudged:
+                    fw = f" · firmware {self.firmware}" if self.firmware is not None else ""
+                    self._status("connected", f"Built-in USB driver{fw}")
             for code, value in parser.feed(buf):
                 if self.on_event:
                     self.on_event(code, value)
