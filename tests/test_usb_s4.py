@@ -185,7 +185,7 @@ def test_driver_choice(monkeypatch):
 def test_extras_expose_bytes_the_kernel_ignores_without_changing_known_codes():
     from s4bridge.hw.usb_s4 import EXTRA_BASE, EXTRA_NAMES
     plain, extra = S4Parser(), S4Parser(extras=True)
-    b = bytearray(word_block(2, {7: 300, 5: 1234}))      # word 5 is unread by the kernel
+    b = bytearray(word_block(3, {3: 300, 1: 1234}))      # block 3 word 1 is unread by the kernel
     known = plain.feed(bytes(b))
     both = extra.feed(bytes(b))
     assert [e for e in both if e[0] < EXTRA_BASE] == known
@@ -272,3 +272,14 @@ def test_idle_s4_after_first_report_is_left_alone(monkeypatch):
     s4 = OnceThenIdle(kernel_attached=False)
     assert _run_pump(s4, UsbDevice(), 0.5) == "stopped"
     assert not any(e[0] == "w" and e[2][:1] == b"\x0b" for e in s4.log)
+
+
+def test_loop_recorder_drywet_is_block2_word5():
+    """Found on a real S4 MK1: the kernel never reads this slot."""
+    from s4bridge.hw.controls import HardwareMap
+    from s4bridge.hw.usb_s4 import LOOP_DRYWET_CODE
+    p = S4Parser()
+    p.feed(word_block(2, {}))
+    assert p.feed(word_block(2, {5: 1986})) == [(LOOP_DRYWET_CODE, 1986)]
+    hw = HardwareMap()
+    assert hw.lookup(LOOP_DRYWET_CODE).cid == "G.loop_drywet"

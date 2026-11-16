@@ -32,13 +32,17 @@ CMD_AUTO_MSG = 0x0B
 
 # block id -> [(axis index, 16-bit word offset in the block)]; from tks4_dispatch()
 _ANALOG = {
-    2: [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (7, 7)],
+    2: [(0, 1), (1, 2), (2, 3), (3, 4), (48, 5), (4, 6), (7, 7)],
     3: [(6, 3), (5, 4), (8, 6), (9, 7)],
     4: [(10, 1), (11, 2), (12, 3), (13, 4), (14, 5), (15, 6), (16, 7)],
     5: [(17, 1), (18, 2), (19, 3), (20, 4), (21, 5), (22, 6), (23, 7)],
     6: [(24, 1), (25, 2), (26, 3), (27, 4), (28, 5), (29, 6), (30, 7)],
     7: [(31, 1), (32, 2), (33, 3), (34, 4), (35, 5)],
 }
+
+# Found on a real S4 MK1 with the extras view: the loop recorder DRY/WET knob is block 2 word 5,
+# a slot the kernel driver never reads. Reported on an axis number the kernel doesn't use.
+LOOP_DRYWET_CODE = ABS_HAT0X + 48
 
 # kernel's kontrols4_controller[]: ALSA control name -> LED number on EP8
 LED_INDEX = {
@@ -212,7 +216,7 @@ LED_INDEX = {
 # EXTRA_BASE up, so anything the S4 sends there shows on the Monitor page as "unknown <code>".
 EXTRA_BASE = 0x300
 _EXTRA_BYTES = {0: (2, 3), 1: (2, 3, 10, 11, 14, 15)}          # block -> byte offsets
-_EXTRA_WORDS = {2: (5,), 3: (1, 2, 5), 7: (6, 7)}              # block -> 16-bit word offsets
+_EXTRA_WORDS = {3: (1, 2, 5), 7: (6, 7)}                       # block -> 16-bit word offsets
 _EXTRA_CODES: dict[tuple, int] = {}
 for _b, _offs in _EXTRA_BYTES.items():
     for _o in _offs:

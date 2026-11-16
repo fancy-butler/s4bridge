@@ -191,7 +191,8 @@ def _global_controls() -> list[Control]:
                 led=(m + "Master button",), source="reported"),
         Control("G.quant", "QUANT", BUTTON, 287, "G", "quant", "small", 630, 209,
                 led=(m + "Quant button",), source="reported"),
-        Control("G.loop_drywet", "DRY/WET", POT, 20, "G", "loop_drywet", "knob", 602, 258, source="kernel"),
+        # block 2 word 5, found on hardware; the kernel driver never reads it (built-in USB driver only)
+        Control("G.loop_drywet", "DRY/WET", POT, 64, "G", "loop_drywet", "knob", 602, 258, source="tested"),
         Control("G.loop_size", "SIZE", BUTTON, 280, "G", "loop_size", "small", 581, 300,
                 led=(m + "Size",), source="tested"),
         Control("G.loop_undo", "UNDO", BUTTON, 282, "G", "loop_undo", "small", 621, 300,

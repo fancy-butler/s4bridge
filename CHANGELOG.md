@@ -2,6 +2,13 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.3
+### Fixed
+- **Loop recorder DRY/WET works** (built-in USB driver). It sits in a part of the S4's report the
+  Linux kernel driver has never read, so it has been dead on Linux for every S4 MK1. Found on real
+  hardware with the raw view added in 0.6.1. It sends CC 0x04 on the global channel; Mixxx has no loop
+  recorder, so the Mixxx mapping leaves it free.
+
 ## 0.6.2
 ### Fixed
 - Built-in USB driver: after switching back and forth with the kernel driver, the S4 could connect but

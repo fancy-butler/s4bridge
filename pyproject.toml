@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "s4bridge"
-version = "0.6.2"
+version = "0.6.3"
 description = "Use the Traktor Kontrol S4 MK1 with Mixxx and any MIDI software on Linux"
 readme = "README.md"
 license = "GPL-3.0-or-later"
