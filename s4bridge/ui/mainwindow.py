@@ -828,7 +828,13 @@ class SettingsPage(QWidget):
         self.upd.toggled.connect(lambda v: self._s("check_updates", v))
         l5.addWidget(self.autostart)
         l5.addWidget(self.tray_close)
-        l5.addWidget(self.upd)
+        chk = QPushButton(theme.icon("rotate-cw", theme.TEXT, 16), "Check now")
+        chk.clicked.connect(lambda: self.win.check_updates(force=True))
+        urow = QHBoxLayout()
+        urow.setContentsMargins(0, 0, 0, 0)
+        urow.addWidget(self.upd, 1)
+        urow.addWidget(chk)
+        l5.addLayout(urow)
         grid.addWidget(c5, 2, 0, 1, 2)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
@@ -1427,7 +1433,8 @@ class MainWindow(QMainWindow):
         self.update_link = QLabel()
         self.update_link.setTextFormat(Qt.RichText)
         self.update_link.setAlignment(Qt.AlignHCenter)
-        self.update_link.setOpenExternalLinks(True)
+        self.update_link.setOpenExternalLinks(False)
+        self.update_link.linkActivated.connect(self._link)
         self.update_link.setStyleSheet("font-size:12px; padding-top:6px;")
         self.update_link.hide()
         badge.addWidget(self.update_link)
@@ -1449,6 +1456,7 @@ class MainWindow(QMainWindow):
         self.status_lay = scl
         self._compact = None
         self._fixing = False
+        self._manual_check = False
 
         right = QWidget()
         rl = QVBoxLayout(right)
@@ -1478,7 +1486,8 @@ class MainWindow(QMainWindow):
         self.statusBar().clearMessage()  # quiet until there is something to say (toasts fade after 4 s)
         self.sb_version = QLabel()
         self.sb_version.setTextFormat(Qt.RichText)
-        self.sb_version.setOpenExternalLinks(True)
+        self.sb_version.setOpenExternalLinks(False)
+        self.sb_version.linkActivated.connect(self._link)
         self.sb_version.setStyleSheet(f"color:{theme.MUTED}; padding-right:10px;")
         self.statusBar().addPermanentWidget(self.sb_version)
         self._update_sb_version()
@@ -1663,9 +1672,10 @@ class MainWindow(QMainWindow):
             return
         if not force and not updates.due(self.core.settings):
             return
-        req = QNetworkRequest(QUrl(updates.API_URL))
+        self._manual_check = force
+        req = QNetworkRequest(QUrl(updates.VERSION_URL))
         req.setRawHeader(b"User-Agent", updates.USER_AGENT.encode())
-        req.setRawHeader(b"Accept", b"application/vnd.github+json")
+        req.setAttribute(QNetworkRequest.CacheLoadControlAttribute, QNetworkRequest.AlwaysNetwork)
         reply = self._net.get(req)
         reply.finished.connect(lambda r=reply: self._update_reply(r))
 
@@ -1675,9 +1685,12 @@ class MainWindow(QMainWindow):
         from .. import updates
         try:
             if reply.error() != QNetworkReply.NoError:
-                return  # offline, rate-limited, repo not public yet: say nothing
+                if self._manual_check:
+                    self.toast("Couldn't reach GitHub to check for updates.")
+                return  # offline: say nothing on automatic checks
             self.core.settings["update_checked_at"] = time.time()
-            rel = updates.parse_release(bytes(reply.readAll()))
+            latest = updates.parse_version_file(bytes(reply.readAll()).decode("utf-8", "replace"))
+            rel = (latest, updates.CHANGELOG_URL) if latest else None
             if rel and updates.is_newer(rel[0], __version__):
                 self.core.settings["update_latest"], self.core.settings["update_url"] = rel
                 self._show_update(*rel)
@@ -1685,6 +1698,8 @@ class MainWindow(QMainWindow):
                 self.core.settings.pop("update_latest", None)
                 self.update_link.hide()
                 self._update_sb_version()
+                if self._manual_check:
+                    self.toast(f"You're up to date ({__version__}).")
             self.core.save_settings()
         finally:
             reply.deleteLater()
@@ -1695,11 +1710,82 @@ class MainWindow(QMainWindow):
             self.update_link.hide()
             self._update_sb_version()
             return
-        self.update_link.setText(f"<a href='{url or updates.RELEASES_URL}' style='color:{theme.ACCENT};"
-                                 f" text-decoration:none'>New version {version} ›</a>")
-        self.update_link.setToolTip("Open the release page")
+        self._update_version = version
+        if updates.can_self_update():
+            href, text, tip = "update:", f"Update to {version} ›", "Download, build and install it (asks for your password once)"
+        else:
+            href, text, tip = url or updates.RELEASES_URL, f"New version {version} ›", "See what's new"
+        self.update_link.setText(f"<a href='{href}' style='color:{theme.ACCENT}; text-decoration:none'>{text}</a>")
+        self.update_link.setToolTip(tip)
         self.update_link.show()
         self._update_sb_version()
+
+    def _link(self, href):
+        if href == "update:":
+            self.start_update()
+        else:
+            QDesktopServices.openUrl(QUrl(href))
+
+    def start_update(self):
+        from PySide6.QtWidgets import QProgressDialog
+        from .. import updates
+        version = getattr(self, "_update_version", "")
+        box = QMessageBox(self)
+        box.setWindowTitle("Update S4 Bridge")
+        box.setText(f"Update S4 Bridge {__version__} → {version}?")
+        box.setInformativeText("It downloads the new version, builds it, and asks for your password once to "
+                               "install it. S4 Bridge restarts by itself when it's done (about a minute).")
+        go = box.addButton("Update", QMessageBox.AcceptRole)
+        news = box.addButton("What's new", QMessageBox.HelpRole)
+        box.addButton("Later", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is news:
+            QDesktopServices.openUrl(QUrl(updates.CHANGELOG_URL))
+            return
+        if box.clickedButton() is not go:
+            return
+        dlg = QProgressDialog("Starting…", None, 0, 0, self)
+        dlg.setWindowTitle("Updating S4 Bridge")
+        dlg.setMinimumDuration(0)
+        dlg.setWindowModality(Qt.WindowModal)
+        dlg.show()
+        self._upd_dlg, self._upd_log = dlg, []
+        proc = QProcess(self)
+        proc.setProcessChannelMode(QProcess.MergedChannels)
+        proc.readyReadStandardOutput.connect(lambda: self._update_output(proc))
+        proc.finished.connect(lambda code, _st: self._update_done(code))
+        self._upd_proc = proc
+        proc.start("/bin/sh", ["-c", updates.update_script()])
+
+    _STEP_TEXT = {"Downloading": "Downloading the new version…", "Building": "Building it (this is the slow bit)…",
+                  "Installing": "Installing: enter your password in the prompt…", "Done": "Done. Restarting…"}
+
+    def _update_output(self, proc):
+        for line in bytes(proc.readAllStandardOutput()).decode("utf-8", "replace").splitlines():
+            self._upd_log.append(line)
+            if line.startswith("STEP: "):
+                self._upd_dlg.setLabelText(self._STEP_TEXT.get(line[6:].strip(), line[6:]))
+        del self._upd_log[:-40]
+
+    def _update_done(self, code):
+        from .. import updates
+        self._upd_dlg.close()
+        if code == 0:
+            cmd = updates.relaunch_command()
+            QProcess.startDetached(cmd[0], cmd[1:])
+            self.quit_app()
+            QApplication.instance().quit()
+            return
+        cancelled = any("Request dismissed" in l or "Not authorized" in l for l in self._upd_log)
+        box = QMessageBox(self)
+        box.setWindowTitle("Update didn't finish")
+        box.setText("The password prompt was cancelled, so nothing changed." if cancelled
+                    else "The update didn't finish. Nothing was changed.")
+        if not cancelled:
+            box.setDetailedText("\n".join(self._upd_log[-25:]))
+            box.setInformativeText("“Show Details” has the last lines of the build; Health › Copy report plus "
+                                   "those lines make a good GitHub issue.")
+        box.exec()
 
     def _update_sb_version(self):
         """Folded sidebar hides the version and update link, so they move to the status bar."""

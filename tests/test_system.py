@@ -56,3 +56,26 @@ def test_update_check_is_daily_and_can_be_turned_off():
     assert not updates.due({"update_checked_at": 100000}, now=100000 + 3600)
     assert updates.due({"update_checked_at": 100000}, now=100000 + updates.INTERVAL)
     assert not updates.due({"check_updates": False}, now=10 ** 9)
+
+
+def test_version_file_parsing():
+    assert updates.parse_version_file('"""x"""\n__version__ = "0.7.0"\n') == "0.7.0"
+    assert updates.parse_version_file("__version__ = '1.2'") == "1.2"
+    assert updates.parse_version_file("404: Not Found") is None
+    from s4bridge import __version__
+    assert updates.parse_version_file((ROOT / "s4bridge/__init__.py").read_text()) == __version__
+
+
+def test_update_script_is_valid_and_only_pacman_is_elevated():
+    s = updates.update_script()
+    assert subprocess.run(["sh", "-n", "-c", s]).returncode == 0
+    assert "makepkg -f --nodeps --noconfirm" in s and "sudo" not in s
+    elevated = [l for l in s.splitlines() if "pkexec" in l]
+    assert elevated == ['pkexec pacman -U --noconfirm "$PWD/$pkg"']
+    for step in ("Downloading", "Building", "Installing", "Done"):
+        assert f"STEP: {step}" in s
+
+
+def test_no_self_update_without_pacman(monkeypatch):
+    monkeypatch.setattr(updates.shutil, "which", lambda name: None)
+    assert updates.can_self_update() is False

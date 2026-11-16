@@ -2,6 +2,16 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.7.0
+### Added
+- **Update now.** On Arch-based systems (installed from the PKGBUILD), the sidebar's update link is a
+  button: it downloads the new version from GitHub, builds it, asks for your password once, installs it
+  and restarts S4 Bridge. Elsewhere it links to what's new.
+- **Settings › App › Check now** for an immediate check.
+### Changed
+- The update check reads the version number from the code on GitHub, so new versions are noticed
+  without a GitHub release being published for each one.
+
 ## 0.6.4
 ### Fixed
 - Surface page: pushing the left deck's MOVE or SIZE knob showed nothing. The press always worked
