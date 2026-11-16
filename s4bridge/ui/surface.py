@@ -289,6 +289,11 @@ class Surface(QWidget):
                 a = math.radians(i * 22.5)
                 p.drawPoint(QPointF(c.x + math.cos(a) * (r + 6), c.y + math.sin(a) * (r + 6)))
             self._knob_body(p, c.x, c.y, r, 0.5)
+            push = self._push_partner(c)
+            if push is not None and self.raw(push):     # knob pushed in: the knob itself shows it
+                p.setPen(QPen(QColor(theme.ACCENT), 2.5))
+                p.setBrush(Qt.NoBrush)
+                p.drawEllipse(QPointF(c.x, c.y), r + 2.5, r + 2.5)
             p.save()
             p.translate(c.x, c.y)
             p.rotate(ang)

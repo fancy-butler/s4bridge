@@ -95,8 +95,8 @@ _DECK_ROWS = [
     ("play", "PLAY", BUTTON, 263, 319, "pad", 319, 620, ("Play",), "tested"),
     ("loop_in", "IN", BUTTON, 266, 306, "pad", 210, 456, ("In",), "tested"),
     ("loop_out", "OUT", BUTTON, 268, 308, "pad", 270, 456, ("Out",), "tested"),
-    ("move_press", "MOVE push", BUTTON, 275, 299, "small", 148, 456, (), "tested"),
-    ("size_press", "SIZE push", BUTTON, 274, 298, "small", 330, 456, (), "tested"),
+    ("move_press", "MOVE push", BUTTON, 275, 299, "none", 148, 456, (), "tested"),
+    ("size_press", "SIZE push", BUTTON, 274, 298, "none", 330, 456, (), "tested"),
     ("tempo_down", "▼", BUTTON, 273, 297, "small", 65, 411, ("Tempo down",), "tested"),
     ("tempo_up", "▲", BUTTON, 272, 296, "small", 92, 411, ("Tempo up",), "tested"),
 ]

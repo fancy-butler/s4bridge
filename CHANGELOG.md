@@ -2,6 +2,12 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.4
+### Fixed
+- Surface page: pushing the left deck's MOVE or SIZE knob showed nothing. The press always worked
+  (it reached the DJ software), but its little button was drawn exactly under the knob and hidden.
+  Pushed knobs now show an orange ring, on every push-knob (MOVE, SIZE, GAIN, BROWSE).
+
 ## 0.6.3
 ### Fixed
 - **Loop recorder DRY/WET works** (built-in USB driver). It sits in a part of the S4's report the
