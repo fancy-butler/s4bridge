@@ -180,3 +180,18 @@ def test_driver_choice(monkeypatch):
         assert c.driver_choice() == "usb"
         c.settings.pop("driver")
         assert c.driver_choice() == "usb"
+
+
+def test_extras_expose_bytes_the_kernel_ignores_without_changing_known_codes():
+    from s4bridge.hw.usb_s4 import EXTRA_BASE, EXTRA_NAMES
+    plain, extra = S4Parser(), S4Parser(extras=True)
+    b = bytearray(word_block(2, {7: 300, 5: 1234}))      # word 5 is unread by the kernel
+    known = plain.feed(bytes(b))
+    both = extra.feed(bytes(b))
+    assert [e for e in both if e[0] < EXTRA_BASE] == known
+    extras = {c: v for c, v in both if c >= EXTRA_BASE}
+    assert 1234 in extras.values()
+    assert all(c in EXTRA_NAMES for c in extras)
+    b0 = bytearray(block(0))
+    b0[2] = 0x10                                            # a bit in a button byte the kernel skips
+    assert any(c >= EXTRA_BASE and v == 0x10 for c, v in extra.feed(bytes(b0)))

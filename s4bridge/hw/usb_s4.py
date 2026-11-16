@@ -208,11 +208,40 @@ LED_INDEX = {
 }
 
 
-class S4Parser:
-    """Turns EP4 reports into (code, value) changes, like the kernel's input core does."""
+# Report bytes the kernel driver never reads. With extras on, they're reported as codes from
+# EXTRA_BASE up, so anything the S4 sends there shows on the Monitor page as "unknown <code>".
+EXTRA_BASE = 0x300
+_EXTRA_BYTES = {0: (2, 3), 1: (2, 3, 10, 11, 14, 15)}          # block -> byte offsets
+_EXTRA_WORDS = {2: (5,), 3: (1, 2, 5), 7: (6, 7)}              # block -> 16-bit word offsets
+_EXTRA_CODES: dict[tuple, int] = {}
+for _b, _offs in _EXTRA_BYTES.items():
+    for _o in _offs:
+        _EXTRA_CODES[("b", _b, _o)] = EXTRA_BASE + len(_EXTRA_CODES)
+for _b, _offs in _EXTRA_WORDS.items():
+    for _o in _offs:
+        _EXTRA_CODES[("w", _b, _o)] = EXTRA_BASE + len(_EXTRA_CODES)
+EXTRA_NAMES = {v: f"block {k[1]} {'byte' if k[0] == 'b' else 'word'} {k[2]}" for k, v in _EXTRA_CODES.items()}
 
-    def __init__(self):
+
+class S4Parser:
+    """Turns EP4 reports into (code, value) changes, like the kernel's input core does.
+
+    extras=True also reports the bytes the kernel ignores (see EXTRA_BASE).
+    """
+
+    def __init__(self, extras: bool = False):
         self.state: dict[int, int] = {}
+        self.extras = extras
+
+    def _extra(self, out, b, bid):
+        for o in _EXTRA_BYTES.get(bid, ()):
+            self._put(out, _EXTRA_CODES[("b", bid, o)], b[o])
+        for o in _EXTRA_WORDS.get(bid, ()):
+            code, v = _EXTRA_CODES[("w", bid, o)], (b[o * 2] << 8) | b[o * 2 + 1]
+            last = self.state.get(code)
+            if last is None or abs(v - last) >= 4:      # analog: skip electrical noise
+                self.state[code] = v
+                out.append((code, v))
 
     def _put(self, out, code, value):
         if self.state.get(code) != value:
@@ -239,6 +268,8 @@ class S4Parser:
                     self._put(out, ABS_HAT0X + axis, (b[off * 2] << 8) | b[off * 2 + 1])
             else:
                 break   # unknown block: the kernel drops the rest of the report, so do we
+            if self.extras:
+                self._extra(out, b, bid)
         return out
 
 
@@ -405,7 +436,7 @@ class UsbDevice(BaseDevice):
 
     def _pump(self, dev):
         import usb.core
-        parser = S4Parser()
+        parser = S4Parser(extras=True)
         while not self._stop.is_set():
             try:
                 buf = bytes(dev.read(EP4_IN, 512, timeout=250))

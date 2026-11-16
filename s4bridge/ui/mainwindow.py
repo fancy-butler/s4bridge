@@ -655,7 +655,13 @@ class MonitorPage(QWidget):
         elif k == "in":
             col, line = theme.MUTED, f"{ts}  ◉ HW   {ev['cid']:<18} code {ev['code']:<4} value {ev['value']}"
         else:
-            col, line = theme.WARN, f"{ts}  ? HW   unidentified code {ev['code']} value {ev['value']}  (Mapping › Identify)"
+            from ..hw.usb_s4 import EXTRA_NAMES
+            where = EXTRA_NAMES.get(ev["code"])
+            if where:   # a report byte the kernel driver ignores (built-in USB driver only)
+                col, line = theme.WARN, (f"{ts}  ? HW   raw {where:<18} code {ev['code']:<4} value {ev['value']}"
+                                         f"  ({ev['value']:#06x})")
+            else:
+                col, line = theme.WARN, f"{ts}  ? HW   unidentified code {ev['code']} value {ev['value']}  (Mapping › Identify)"
         line = line.replace("&", "&amp;").replace("<", "&lt;").replace(" ", "&nbsp;")
         self.pending.append(f"<span style='color:{col}'>{line}</span>")
 
@@ -1596,7 +1602,11 @@ class MainWindow(QMainWindow):
         elif k == "deck":
             self.surface_page.refresh()
         elif k == "unknown":
-            self.toast(f"Unidentified control (event {ev['code']}). Name it in Mapping › Identify.")
+            from ..hw.usb_s4 import EXTRA_BASE
+            told = self.__dict__.setdefault("_told_unknown", set())
+            if ev["code"] < EXTRA_BASE and ev["code"] not in told:   # once per code; raw bytes stay on Monitor
+                told.add(ev["code"])
+                self.toast(f"Unidentified control (event {ev['code']}). Name it in Mapping › Identify.")
 
     def _rate(self):
         self.surface_page.rate.setText(f"{self._count} msg/s")

@@ -267,3 +267,19 @@ def test_display_words_and_dot():
     assert dev.led_state["LED: Deck A: Digit 2 - dot"] == 31
     t.toggle_deck("L"); t.toggle_deck("L")      # flipping away and back keeps it
     assert dev.led_state["LED: Deck A: Digit 2 - dot"] == 31
+
+
+def test_pot_noise_is_ignored_but_ends_always_reach():
+    t, dev, out = make()
+    code = t.hw.by_id["FX1.k1"].code if hasattr(t.hw, "by_id") else next(
+        c.code for c in t.hw.controls.values() if c.cid == "FX1.k1")
+    t.handle_event(code, 2000)
+    n = len(out)
+    for v in (2001, 1999, 2002, 1998, 2000):      # a pot sitting still, wobbling
+        t.handle_event(code, v)
+    assert len(out) == n
+    t.handle_event(code, 2050)                     # a real turn (62 -> 64 in MIDI)
+    assert len(out) > n
+    t.handle_event(code, 4093)
+    t.handle_event(code, 4095)                     # inside the deadband, but it's the end stop
+    assert t._pot_last[code] == 4095

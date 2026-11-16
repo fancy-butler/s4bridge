@@ -2,6 +2,17 @@
 
 All notable changes to S4 Bridge. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.1
+### Fixed
+- Knobs no longer "move" by themselves. The S4's knob readings wobble by a count or two when LEDs
+  light or the sound card runs; that showed as knobs lighting up on the Surface page whenever a button
+  was pressed, and in high-resolution mode it reached the DJ software. Changes under 4 of 4096 steps
+  are now ignored; the very ends of travel always get through.
+### Added
+- Built-in USB driver: the parts of the S4's reports that the Linux kernel driver has always ignored
+  now show on the Monitor page as "raw block … byte/word …". This is for finding controls the kernel
+  never reported (left MOVE/SIZE pushes and loop recorder DRY/WET are the suspects).
+
 ## 0.6.0
 ### Added
 - **Built-in USB driver (beta).** S4 Bridge can now talk to the S4 directly over USB instead of going

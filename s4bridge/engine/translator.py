@@ -45,6 +45,7 @@ class Translator:
     def __init__(self, hwmap: HardwareMap, profile: dict, device, send: Callable[[int, int, int], None]):
         self.hw = hwmap
         self.device = device
+        self._pot_last: dict[int, int] = {}
         self.send_raw = send
         self.lock = threading.RLock()
         self.listeners: list[Callable[[dict], None]] = []
@@ -142,6 +143,8 @@ class Translator:
             if c is None:
                 self._emit({"t": "unknown", "code": code, "value": value})
                 return
+            if c.kind == POT and not self._pot_moved(code, value):
+                return   # electrical noise, not a hand on the knob
             self._emit({"t": "in", "cid": c.cid, "code": code, "value": value})
             m = self.p["map"].get(area_key(c.area, c.func))
             if c.kind == BUTTON:
@@ -154,6 +157,15 @@ class Translator:
                 self._jog(c, m, code, value)
             elif c.kind == TOUCH:
                 self._touch_sensor(c, m, value)
+
+    POT_DEADBAND = 4   # of 4096 steps: the S4's pots wobble a count or two when LEDs or audio load the supply
+
+    def _pot_moved(self, code: int, v: int) -> bool:
+        last = self._pot_last.get(code)
+        if last is None or abs(v - last) >= self.POT_DEADBAND or (v != last and v in (0, 0xFFF)):
+            self._pot_last[code] = v
+            return True
+        return False
 
     def _num(self, c: Control, m: dict) -> int:
         n = m["num"]
